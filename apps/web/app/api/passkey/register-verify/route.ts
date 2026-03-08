@@ -5,7 +5,10 @@ import { auth } from "@/lib/auth";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
 const RP_ID = process.env.PASSKEY_RP_ID ?? "muvie.chat";
-const ORIGIN = process.env.PASSKEY_ORIGIN ?? "https://muvie.chat";
+const ORIGINS = [
+  process.env.PASSKEY_ORIGIN ?? "https://muvie.chat",
+  "ios:bundle-id:chat.muvie.app",
+];
 
 export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: req.headers });
@@ -21,7 +24,7 @@ export async function POST(req: Request) {
     const verification = await verifyRegistrationResponse({
       response: body,
       expectedChallenge: stored.challenge,
-      expectedOrigin: ORIGIN,
+      expectedOrigin: ORIGINS,
       expectedRPID: RP_ID,
       requireUserVerification: true,
     });

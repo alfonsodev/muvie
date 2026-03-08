@@ -4,17 +4,22 @@
     "slug": "muvi",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/app_icon.png",
     "scheme": "muvi",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "chat.muvie.app",
-      "associatedDomains": ["webcredentials:muvie.chat"],
+      "associatedDomains": [
+        "webcredentials:muvie.chat"
+      ],
       "appleTeamId": "5D7S45GFCL",
       "infoPlist": {
-        "CFBundleLocalizations": ["es", "en"],
+        "CFBundleLocalizations": [
+          "es",
+          "en"
+        ],
         "CFBundleDevelopmentRegion": "es"
       }
     },
@@ -47,6 +52,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c9b634ee-db65-4d32-92e5-750de979f304"
+      }
     }
   }
 }
