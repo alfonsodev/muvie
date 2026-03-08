@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-sdk": {
+      "source": "vercel/ai",
+      "sourceType": "github",
+      "computedHash": "58ce68f628890c3925aea2b5435a649251ac182057541045c68fc19a27aaa0ec"
+    },
+    "dagster-expert": {
+      "source": "dagster-io/skills",
+      "sourceType": "github",
+      "computedHash": "cffa507fa2ab86803f81e80c4f7e454b80fcf1ba8f4d12580638ae6f2dd7fa4a"
+    }
+  }
+}

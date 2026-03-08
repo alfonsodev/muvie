@@ -1,0 +1,60 @@
+import { DarkTheme, ThemeProvider } from "@react-navigation/native";
+import { Redirect, Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { Linking } from "react-native";
+import * as ExpoLinking from "expo-linking";
+import "react-native-reanimated";
+import * as SecureStore from "expo-secure-store";
+import { authClient, BEARER_KEY } from "@/lib/auth-client";
+
+export const unstable_settings = {
+  anchor: "(tabs)",
+};
+
+async function handleDeepLink(url: string | null) {
+  if (!url) return;
+  try {
+    const parsed = ExpoLinking.parse(url);
+    // muvi://callback?token=SESSION_TOKEN  (from magic-link app-callback page)
+    if (parsed.hostname === "callback" && parsed.queryParams?.token) {
+      const token = parsed.queryParams.token as string;
+      await SecureStore.setItemAsync(BEARER_KEY, token);
+      // Re-fetch session — onRequest hook will attach the bearer token
+      await authClient.getSession();
+    }
+  } catch {
+    // Ignore malformed URLs
+  }
+}
+
+export default function RootLayout() {
+  const { data: session, isPending } = authClient.useSession();
+
+  useEffect(() => {
+    // Handle deep link when app was closed
+    Linking.getInitialURL().then(handleDeepLink);
+    // Handle deep link while app is open
+    const sub = Linking.addEventListener("url", ({ url }) => handleDeepLink(url));
+    return () => sub.remove();
+  }, []);
+
+  if (isPending) return null;
+
+  const user = session?.user as (Record<string, unknown> & { username?: string | null }) | undefined;
+  const isAuthenticated = !!user;
+  const needsOnboarding = isAuthenticated && !user?.username;
+
+  return (
+    <ThemeProvider value={DarkTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+      </Stack>
+      {!isAuthenticated && <Redirect href="/(auth)/sign-in" />}
+      {needsOnboarding && <Redirect href="/(auth)/onboarding" />}
+      <StatusBar style="light" />
+    </ThemeProvider>
+  );
+}

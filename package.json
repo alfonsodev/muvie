@@ -1,0 +1,17 @@
+{
+  "name": "muvi",
+  "private": true,
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "mobile": "turbo dev --filter=@muvi/mobile",
+    "ios": "pnpm --filter @muvi/mobile ios",
+    "android": "pnpm --filter @muvi/mobile android",
+    "web": "turbo dev --filter=@muvi/web"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4"
+  }
+}
