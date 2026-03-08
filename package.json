@@ -7,7 +7,7 @@
     "build": "turbo build",
     "lint": "turbo lint",
     "mobile": "turbo dev --filter=@muvi/mobile",
-    "ios": "pnpm --filter @muvi/mobile ios",
+    "ios": "pnpm --filter @muvi/mobile dev",
     "android": "pnpm --filter @muvi/mobile android",
     "web": "turbo dev --filter=@muvi/web"
   },

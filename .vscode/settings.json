@@ -3,10 +3,5 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
-  },
-  "workbench.colorCustomizations": {
-    "tab.activeBorder": "#2299B6",
-    "statusBar.background": "#2299B6",
-    "statusBar.foreground": "#ffffff"
   }
 }

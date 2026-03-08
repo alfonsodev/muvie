@@ -3,6 +3,7 @@ import { generateAPIUrl } from '@/utils';
 import { useChat } from '@ai-sdk/react';
 import { Ionicons } from '@expo/vector-icons';
 import { DefaultChatTransport } from 'ai';
+import { getLocales } from 'expo-localization';
 import { fetch as expoFetch } from 'expo/fetch';
 import React, { useRef, useEffect } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,12 +30,14 @@ const C = {
 };
 
 
+const country = getLocales()[0]?.regionCode ?? 'US';
+
 export default function ChatScreen() {
   const { messages, status, sendMessage, error } = useChat({
     transport: new DefaultChatTransport({
       fetch: expoFetch as unknown as typeof globalThis.fetch,
       api: generateAPIUrl('/api/chat'),
-      body: { locale: lang },
+      body: { locale: lang, country },
     }),
   });
 
