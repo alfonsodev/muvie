@@ -29,7 +29,7 @@ export const auth = betterAuth({
       sendMagicLink: async ({ email, url }) => {
         if (resend) {
           await resend.emails.send({
-            from: "Muvi <noreply@muvie.chat>",
+            from: "Muvi <noreply@updates.muvie.chat>",
             to: email,
             subject: "Your Muvi sign-in link",
             html: `

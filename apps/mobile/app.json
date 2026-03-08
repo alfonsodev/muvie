@@ -20,7 +20,10 @@
           "es",
           "en"
         ],
-        "CFBundleDevelopmentRegion": "es"
+        "CFBundleDevelopmentRegion": "es",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {

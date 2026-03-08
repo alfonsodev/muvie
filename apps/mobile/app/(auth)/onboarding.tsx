@@ -12,6 +12,9 @@ import {
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { generateUsername, generateAvatarSeed, avatarColorFromSeed } from "@/lib/username";
+import { authClient, BEARER_KEY } from "@/lib/auth-client";
+import { registerPasskey, isPasskeySupported } from "@/lib/passkey";
+import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 
 function getApiUrl(path: string): string {
@@ -84,7 +87,38 @@ export default function OnboardingScreen() {
         return;
       }
 
-      router.replace("/(tabs)");
+      if (isPasskeySupported()) {
+        Alert.alert(
+          "Enable Face ID sign-in?",
+          "Sign in instantly next time with Face ID — no email needed.",
+          [
+            {
+              text: "Skip",
+              style: "cancel",
+              onPress: () => router.replace("/(tabs)"),
+            },
+            {
+              text: "Enable",
+              onPress: async () => {
+                try {
+                  const { data } = await authClient.getSession();
+                  const token = data?.session?.token;
+                  if (token) {
+                    await SecureStore.setItemAsync(BEARER_KEY, token);
+                    await registerPasskey(token);
+                  }
+                } catch {
+                  // passkey registration failed or was cancelled — not critical
+                } finally {
+                  router.replace("/(tabs)");
+                }
+              },
+            },
+          ]
+        );
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch {
       Alert.alert("Error", "Could not save profile. Check your connection.");
     } finally {
