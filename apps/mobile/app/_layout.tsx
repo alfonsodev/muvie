@@ -1,11 +1,14 @@
 import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { Redirect, Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Linking, Platform } from "react-native";
 import * as ExpoLinking from "expo-linking";
 import "react-native-reanimated";
 import { authClient, BEARER_KEY } from "@/lib/auth-client";
+
+SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -30,6 +33,7 @@ async function handleDeepLink(url: string | null) {
 
 export default function RootLayout() {
   const { data: session, isPending } = authClient.useSession();
+  const splashHidden = useRef(false);
 
   useEffect(() => {
     // Handle deep link when app was closed
@@ -38,6 +42,16 @@ export default function RootLayout() {
     const sub = Linking.addEventListener("url", ({ url }) => handleDeepLink(url));
     return () => sub.remove();
   }, []);
+
+  useEffect(() => {
+    if (!isPending && !splashHidden.current) {
+      const timer = setTimeout(() => {
+        splashHidden.current = true;
+        SplashScreen.hideAsync();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [isPending]);
 
   if (isPending) return null;
 

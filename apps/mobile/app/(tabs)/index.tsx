@@ -1,11 +1,13 @@
 import { lang, t } from "@/i18n";
+import { BEARER_KEY } from "@/lib/auth-client";
 import { generateAPIUrl } from "@/utils";
 import { useChat } from "@ai-sdk/react";
 import { Ionicons } from "@expo/vector-icons";
 import { DefaultChatTransport } from "ai";
 import { getLocales } from "expo-localization";
 import { fetch as expoFetch } from "expo/fetch";
-import React, { useEffect, useRef } from "react";
+import * as SecureStore from "expo-secure-store";
+import React, { useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -33,13 +35,25 @@ const C = {
 const country = getLocales()[0]?.regionCode ?? "US";
 
 export default function ChatScreen() {
-  const { messages, status, sendMessage, error, setMessages } = useChat({
-    transport: new DefaultChatTransport({
-      fetch: expoFetch as unknown as typeof globalThis.fetch,
-      api: generateAPIUrl("/api/chat"),
-      body: { locale: lang, country },
-    }),
-  });
+  const [bearerToken, setBearerToken] = React.useState<string | null>(null);
+
+  useEffect(() => {
+    if (Platform.OS === "web") { setBearerToken(""); return; }
+    SecureStore.getItemAsync(BEARER_KEY).then((t) => setBearerToken(t ?? ""));
+  }, []);
+
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        fetch: expoFetch as unknown as typeof globalThis.fetch,
+        api: generateAPIUrl("/api/chat"),
+        body: { locale: lang, country },
+        headers: bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {},
+      }),
+    [bearerToken]
+  );
+
+  const { messages, status, sendMessage, error, setMessages } = useChat({ transport });
 
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);

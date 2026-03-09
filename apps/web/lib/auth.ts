@@ -1,12 +1,10 @@
 import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { bearer, magicLink } from "better-auth/plugins";
-import Database from "better-sqlite3";
+import { db } from "./db";
 import { Resend } from "resend";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-
-const db = new Database("./muvi.db");
 
 export const auth = betterAuth({
   database: db,

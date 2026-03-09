@@ -36,13 +36,26 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="watchlist"
         options={{
-          title: 'Explore',
+          title: 'My List',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name="film.stack" color={color} />
+            <IconSymbol size={26} name="bookmark.fill" color={color} />
           ),
         }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={26} name="person.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{ href: null }}
       />
     </Tabs>
   );
