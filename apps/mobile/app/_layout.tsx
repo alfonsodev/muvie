@@ -2,10 +2,9 @@ import { DarkTheme, ThemeProvider } from "@react-navigation/native";
 import { Redirect, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Linking } from "react-native";
+import { Linking, Platform } from "react-native";
 import * as ExpoLinking from "expo-linking";
 import "react-native-reanimated";
-import * as SecureStore from "expo-secure-store";
 import { authClient, BEARER_KEY } from "@/lib/auth-client";
 
 export const unstable_settings = {
@@ -13,12 +12,13 @@ export const unstable_settings = {
 };
 
 async function handleDeepLink(url: string | null) {
-  if (!url) return;
+  if (!url || Platform.OS === "web") return;
   try {
     const parsed = ExpoLinking.parse(url);
     // muvi://callback?token=SESSION_TOKEN  (from magic-link app-callback page)
     if (parsed.hostname === "callback" && parsed.queryParams?.token) {
       const token = parsed.queryParams.token as string;
+      const SecureStore = await import("expo-secure-store");
       await SecureStore.setItemAsync(BEARER_KEY, token);
       // Re-fetch session — onRequest hook will attach the bearer token
       await authClient.getSession();

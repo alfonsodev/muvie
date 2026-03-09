@@ -1,18 +1,17 @@
+import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
+import { isUserCancelledError, signInWithPasskey } from "@/lib/passkey";
+import * as SecureStore from "expo-secure-store";
+import { useRef, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useRef, useState } from "react";
-import { authClient, BASE_URL } from "@/lib/auth-client";
-import { signInWithPasskey, isPasskeySupported, isUserCancelledError } from "@/lib/passkey";
-import * as SecureStore from "expo-secure-store";
-import { BEARER_KEY } from "@/lib/auth-client";
 
 const C = {
   bg: "#121212",
@@ -67,7 +66,9 @@ export default function SignInScreen() {
       await authClient.getSession();
     } catch (err) {
       if (isUserCancelledError(err)) return;
-      setError((err as { message?: string })?.message ?? "Face ID sign-in failed");
+      setError(
+        (err as { message?: string })?.message ?? "Face ID sign-in failed",
+      );
     } finally {
       setPasskeyLoading(false);
     }
@@ -82,16 +83,22 @@ export default function SignInScreen() {
           <Text style={styles.title}>Check your email</Text>
           <Text style={styles.subtitle}>
             We sent a sign-in link to{"\n"}
-            <Text style={styles.emailHighlight}>{email.trim().toLowerCase()}</Text>
+            <Text style={styles.emailHighlight}>
+              {email.trim().toLowerCase()}
+            </Text>
           </Text>
           <Text style={[styles.subtitle, { marginTop: 8 }]}>
-            Tap the link in your email — this tab will close automatically once you're signed in.
+            Tap the link in your email — this tab will close automatically once
+            you're signed in.
           </Text>
         </View>
 
         <TouchableOpacity
           style={styles.secondaryButton}
-          onPress={() => { setStage("input"); setError(null); }}
+          onPress={() => {
+            setStage("input");
+            setError(null);
+          }}
           activeOpacity={0.7}
         >
           <Text style={styles.secondaryLabel}>Use a different email</Text>
@@ -108,7 +115,7 @@ export default function SignInScreen() {
     >
       <View style={styles.logoArea}>
         <Text style={styles.logo}>🎬</Text>
-        <Text style={styles.title}>Muvi</Text>
+        <Text style={styles.title}>Muvie</Text>
         <Text style={styles.subtitle}>Your personal movie companion</Text>
       </View>
 
@@ -119,7 +126,10 @@ export default function SignInScreen() {
           ref={inputRef}
           style={styles.input}
           value={email}
-          onChangeText={(v) => { setEmail(v); setError(null); }}
+          onChangeText={(v) => {
+            setEmail(v);
+            setError(null);
+          }}
           placeholder="your@email.com"
           placeholderTextColor={C.muted}
           keyboardType="email-address"
@@ -131,7 +141,10 @@ export default function SignInScreen() {
         />
 
         <TouchableOpacity
-          style={[styles.primaryButton, stage === "loading" && styles.buttonDisabled]}
+          style={[
+            styles.primaryButton,
+            stage === "loading" && styles.buttonDisabled,
+          ]}
           onPress={handleSendLink}
           disabled={stage === "loading"}
           activeOpacity={0.8}
@@ -152,7 +165,10 @@ export default function SignInScreen() {
             </View>
 
             <TouchableOpacity
-              style={[styles.secondaryButton, passkeyLoading && styles.buttonDisabled]}
+              style={[
+                styles.secondaryButton,
+                passkeyLoading && styles.buttonDisabled,
+              ]}
               onPress={handlePasskeySignIn}
               disabled={passkeyLoading}
               activeOpacity={0.8}

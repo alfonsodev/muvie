@@ -1,7 +1,10 @@
-import { Passkey } from "react-native-passkey";
 import type { PasskeyError } from "react-native-passkey";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+
+// react-native-passkey is iOS-only — never import it on web
+const Passkey: typeof import("react-native-passkey").Passkey | null =
+  Platform.OS === "ios" ? require("react-native-passkey").Passkey : null;
 
 function getBaseUrl(): string {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
@@ -34,7 +37,7 @@ export async function registerPasskey(sessionToken: string): Promise<void> {
   const authHeaders = { Authorization: `Bearer ${sessionToken}` };
 
   const options = await apiFetch("/api/passkey/register-options", {}, authHeaders);
-  const credential = await Passkey.create(options);
+  const credential = await Passkey!.create(options);
   await apiFetch("/api/passkey/register-verify", credential, authHeaders);
 }
 
@@ -48,14 +51,14 @@ export async function signInWithPasskey(): Promise<{ sessionToken: string }> {
   const challengeKey = Math.random().toString(36).slice(2);
 
   const options = await apiFetch("/api/passkey/login-options", { challengeKey });
-  const credential = await Passkey.get(options);
+  const credential = await Passkey!.get(options);
   return apiFetch("/api/passkey/login-verify", { ...credential, challengeKey }) as Promise<{
     sessionToken: string;
   }>;
 }
 
 export function isPasskeySupported(): boolean {
-  return Platform.OS === "ios" && Passkey.isSupported();
+  return Platform.OS === "ios" && Passkey !== null && Passkey.isSupported();
 }
 
 /** Returns true when the user dismissed the passkey sheet without authenticating. */

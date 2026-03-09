@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>es</string>
     <key>CFBundleDisplayName</key>
-    <string>muvi</string>
+    <string>Muvie</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -32,7 +32,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>muvi</string>
+          <string>Muvie</string>
           <string>chat.muvie.app</string>
         </array>
       </dict>

@@ -12,19 +12,8 @@ import {
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { generateUsername, generateAvatarSeed, avatarColorFromSeed } from "@/lib/username";
-import { authClient, BEARER_KEY } from "@/lib/auth-client";
+import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
 import { registerPasskey, isPasskeySupported } from "@/lib/passkey";
-import * as SecureStore from "expo-secure-store";
-import Constants from "expo-constants";
-
-function getApiUrl(path: string): string {
-  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL + path;
-  if (__DEV__) {
-    const ip = Constants.expoConfig?.hostUri?.split(":")[0] ?? "localhost";
-    return `http://${ip}:3000${path}`;
-  }
-  return `https://muvie.chat${path}`;
-}
 
 const C = {
   bg: "#121212",
@@ -71,9 +60,15 @@ export default function OnboardingScreen() {
 
     setSaving(true);
     try {
-      const res = await fetch(getApiUrl("/api/profile"), {
+      const authHeaders: Record<string, string> = {};
+      if (Platform.OS !== "web") {
+        const token = await SecureStore.getItemAsync(BEARER_KEY);
+        if (token) authHeaders["Authorization"] = `Bearer ${token}`;
+      }
+      const res = await fetch(`${BASE_URL}/api/profile`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...authHeaders },
         body: JSON.stringify({ username, avatarSeed: seed }),
       });
 
@@ -104,6 +99,7 @@ export default function OnboardingScreen() {
                   const { data } = await authClient.getSession();
                   const token = data?.session?.token;
                   if (token) {
+                    const SecureStore = await import("expo-secure-store");
                     await SecureStore.setItemAsync(BEARER_KEY, token);
                     await registerPasskey(token);
                   }
