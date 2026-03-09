@@ -16,13 +16,17 @@ echo "==> Stopping and removing existing container..."
 sudo docker stop "$CONTAINER_NAME" 2>/dev/null || true
 sudo docker rm "$CONTAINER_NAME" 2>/dev/null || true
 
+echo "==> Ensuring db is writable..."
+touch "$DB_PATH"
+chmod 666 "$DB_PATH"
+
 echo "==> Starting new container..."
 sudo docker run -d \
   --name "$CONTAINER_NAME" \
   --restart unless-stopped \
   -p 3001:3000 \
   --env-file "$ENV_FILE" \
-  -v "$DB_PATH:/app/muvi.db" \
+  -v "$DB_PATH:/app/apps/web/muvi.db" \
   "$IMAGE_NAME"
 
 echo "==> Waiting for container to be ready..."
