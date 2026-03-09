@@ -7,8 +7,16 @@ import { NextRequest } from "next/server";
  * hand it back to the native app via the muvie:// custom scheme.
  */
 export async function GET(request: NextRequest) {
-  const session = await auth.api.getSession({ headers: request.headers });
-  const token = (session as unknown as { session?: { token?: string } })?.session?.token;
+  // @better-auth/expo server plugin appends ?token=<session_token> to the callbackURL
+  // when redirecting back from magic-link verification on native apps.
+  const url = new URL(request.url);
+  let token = url.searchParams.get("token") ?? undefined;
+
+  // Fallback: try to read from the session cookie (web flow)
+  if (!token) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    token = (session as unknown as { session?: { token?: string } })?.session?.token;
+  }
 
   if (!token) {
     return new Response(
