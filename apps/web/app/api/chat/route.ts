@@ -171,7 +171,7 @@ function createGetWatchProviders(checked = new Map<string, unknown>()) {
       const cacheKey = `${tmdbId}-${mediaType}-${countryCode}`;
       if (checked.has(cacheKey)) {
         console.log(`[tool:getWatchProviders] duplicate call for ${cacheKey} — returning cached result`);
-        return { ...checked.get(cacheKey) as object, cached: true };
+        return { ...checked.get(cacheKey) as object, cached: true, note: "Already fetched — do not call again for this title." };
       }
       console.log(`[tool:getWatchProviders] tmdbId=${tmdbId} mediaType=${mediaType} countryCode=${countryCode}`);
       try {
@@ -317,13 +317,13 @@ Your capabilities:
 - When the user mentions specific platforms (e.g. "on Netflix or Apple TV+"), pass them as the platforms array to discoverByPlatform
 - Use getTrending only when the user explicitly asks what's trending globally (no country filter — results may not be locally available)
 - Use searchContent to look up a specific title by name and get its TMDB ID
-- Only call getWatchProviders when the user explicitly asks WHERE to watch a specific title they already know — never call it in a loop on the same movie
-- **Never loop calling getWatchProviders on the same tmdbId more than once — if you already have the result, use it**
+- Only call getWatchProviders when the user explicitly asks "where can I watch [specific title]" — **never call it proactively, never call it when updating a profile, never call it at conversation start**
+- **Call getWatchProviders at most once per tmdbId per conversation — if the result already has cached=true, stop and use that data**
 - A movie is "available" even if it's only on rent/buy — flatrate (subscription) is not the only way to watch
 - Offer alternatives if something doesn't appeal
 
 User profile:
-- **Always call getProfile at the start of every conversation** to load the user's preferences
+- Call getProfile **only on the very first user message of the conversation** (i.e., when there are no previous assistant messages). Do NOT call it on subsequent turns — you already have the profile from the first call.
 - If the profile is empty, ask conversationally for: their name, country, streaming platforms they subscribe to, and favorite movie (age and language are optional). Ask in a friendly, natural way — not like a form. Collect answers and call updateProfile to save them.
 - If the profile is partial, use what you have and fill in gaps over time
 - Once you have the profile, use it automatically: use profile.country as the country code (overrides the default), use profile.platforms as the default filter for discoverByPlatform, use profile.favorite_movie to understand their taste when making recommendations
@@ -376,13 +376,23 @@ export async function POST(req: Request) {
   const profileTools = userId ? createProfileTools(userId) : {};
   const getWatchProviders = createGetWatchProviders();
 
+  // Only expose getWatchProviders when the user is explicitly asking where to watch a specific title.
+  // This prevents the model from calling it during unrelated tasks (profile updates, recommendations, etc.)
+  const lastText = (lastUserMsg?.parts ?? [])
+    .filter((p: { type: string }) => p.type === "text")
+    .map((p: { type: string; text?: string }) => p.text ?? "")
+    .join("")
+    .toLowerCase();
+  const wantsProviders = /where.*watch|d[oó]nde.*ver|on what.*platform|en qu[eé].*plataforma|where can i|d[oó]nde puedo/i.test(lastText);
+  const tools = { discoverByPlatform, searchContent, getTrending, ...watchlistTools, ...profileTools, ...(wantsProviders ? { getWatchProviders } : {}) };
+
   const result = streamText({
     model: openai("gpt-4o-mini"),
     system: buildSystemPrompt(locale ?? "es", country ?? "US"),
     messages: await convertToModelMessages(messages),
-    tools: { discoverByPlatform, searchContent, getTrending, getWatchProviders, ...watchlistTools, ...profileTools },
-    stopWhen: stepCountIs(10),
-    onStepFinish: ({ text, toolCalls, toolResults }) => {
+    tools,
+    stopWhen: stepCountIs(5),
+    onStepFinish: ({ text, toolCalls, toolResults, stepType }) => {
       if (text?.trim()) {
         console.log(`[assistant] ${text.trim().slice(0, 300)}`);
       }
