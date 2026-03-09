@@ -5,3 +5,5 @@ run = [
 'eas build --platform ios --profile production',
 'eas submit --platform ios --latest'
 ]
+[tasks.publish]
+run = ['eas build --platform ios --profile production --auto-submit']

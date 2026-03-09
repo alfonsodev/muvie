@@ -1,5 +1,5 @@
 import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
-import { isUserCancelledError, signInWithPasskey } from "@/lib/passkey";
+import { isPasskeySupported, isUserCancelledError, signInWithPasskey } from "@/lib/passkey";
 import * as SecureStore from "expo-secure-store";
 import { useRef, useState } from "react";
 import {

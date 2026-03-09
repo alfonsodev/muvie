@@ -1,23 +1,13 @@
 import type { PasskeyError } from "react-native-passkey";
 import { Platform } from "react-native";
-import Constants from "expo-constants";
+import { BASE_URL } from "@/lib/auth-client";
 
 // react-native-passkey is iOS-only — never import it on web
 const Passkey: typeof import("react-native-passkey").Passkey | null =
   Platform.OS === "ios" ? require("react-native-passkey").Passkey : null;
 
-function getBaseUrl(): string {
-  if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
-  if (__DEV__) {
-    const localIp =
-      Constants.expoConfig?.hostUri?.split(":")[0] ?? "localhost";
-    return `http://${localIp}:3000`;
-  }
-  return "https://muvie.chat";
-}
-
 async function apiFetch(path: string, body: object, headers?: HeadersInit) {
-  const res = await fetch(`${getBaseUrl()}${path}`, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
