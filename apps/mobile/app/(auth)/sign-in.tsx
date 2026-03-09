@@ -1,7 +1,7 @@
-import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
+import { authClient, BEARER_KEY } from "@/lib/auth-client";
 import { isPasskeySupported, isUserCancelledError, signInWithPasskey } from "@/lib/passkey";
-import * as SecureStore from "expo-secure-store";
-import { useRef, useState } from "react";
+import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -27,13 +27,22 @@ const C = {
 type Stage = "input" | "sent" | "loading";
 
 export default function SignInScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [stage, setStage] = useState<Stage>("input");
   const [error, setError] = useState<string | null>(null);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [hasRegisteredPasskey, setHasRegisteredPasskey] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const passkeySupported = isPasskeySupported();
+
+  useEffect(() => {
+    if (!passkeySupported || Platform.OS === "web") return;
+    import("expo-secure-store").then(SS =>
+      SS.getItemAsync(BEARER_KEY)
+    ).then(token => setHasRegisteredPasskey(!!token));
+  }, []);
 
   async function handleSendLink() {
     const trimmed = email.trim().toLowerCase();
@@ -62,8 +71,15 @@ export default function SignInScreen() {
     setError(null);
     try {
       const { sessionToken } = await signInWithPasskey();
-      await SecureStore.setItemAsync(BEARER_KEY, sessionToken);
-      await authClient.getSession();
+      const SS = await import("expo-secure-store");
+      await SS.setItemAsync(BEARER_KEY, sessionToken);
+      const { data } = await authClient.getSession();
+      const user = data?.user as (Record<string, unknown> & { username?: string | null }) | undefined;
+      if (user?.username) {
+        router.replace("/(tabs)");
+      } else {
+        router.replace("/(auth)/onboarding");
+      }
     } catch (err) {
       if (isUserCancelledError(err)) return;
       setError(
@@ -156,7 +172,7 @@ export default function SignInScreen() {
           )}
         </TouchableOpacity>
 
-        {passkeySupported && (
+        {passkeySupported && hasRegisteredPasskey && (
           <>
             <View style={styles.divider}>
               <View style={styles.dividerLine} />

@@ -62,6 +62,7 @@ export default function OnboardingScreen() {
     try {
       const authHeaders: Record<string, string> = {};
       if (Platform.OS !== "web") {
+        const SecureStore = await import("expo-secure-store");
         const token = await SecureStore.getItemAsync(BEARER_KEY);
         if (token) authHeaders["Authorization"] = `Bearer ${token}`;
       }
@@ -99,8 +100,8 @@ export default function OnboardingScreen() {
                   const { data } = await authClient.getSession();
                   const token = data?.session?.token;
                   if (token) {
-                    const SecureStore = await import("expo-secure-store");
-                    await SecureStore.setItemAsync(BEARER_KEY, token);
+                    const SS = await import("expo-secure-store");
+                    await SS.setItemAsync(BEARER_KEY, token);
                     await registerPasskey(token);
                   }
                 } catch {
