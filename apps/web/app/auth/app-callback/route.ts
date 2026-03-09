@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 /**
  * After Better Auth verifies a magic link it redirects here.
  * We read the established session, grab the raw token, and
- * hand it back to the native app via the muvi:// custom scheme.
+ * hand it back to the native app via the muvie:// custom scheme.
  */
 export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({ headers: request.headers });
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 
   // Use JS redirect — HTTP 302 to custom schemes is blocked by some browsers
-  const deepLink = `muvi://callback?token=${encodeURIComponent(token)}`;
+  const deepLink = `muvie://callback?token=${encodeURIComponent(token)}`;
   return new Response(
     `<!DOCTYPE html><html><head><title>Opening Muvi…</title></head>
     <body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#121212;color:#ececec">

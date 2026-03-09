@@ -18,7 +18,7 @@ async function handleDeepLink(url: string | null) {
   if (!url || Platform.OS === "web") return;
   try {
     const parsed = ExpoLinking.parse(url);
-    // muvi://callback?token=SESSION_TOKEN  (from magic-link app-callback page)
+    // muvie://callback?token=SESSION_TOKEN  (from magic-link app-callback page)
     if (parsed.hostname === "callback" && parsed.queryParams?.token) {
       const token = parsed.queryParams.token as string;
       const SecureStore = await import("expo-secure-store");

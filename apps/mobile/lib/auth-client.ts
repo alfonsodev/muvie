@@ -36,7 +36,7 @@ export const authClient = createAuthClient({
   },
   plugins: [
     ...(Platform.OS !== "web"
-      ? [expoClient({ scheme: "muvi", storagePrefix: "muvi", storage: SecureStore })]
+      ? [expoClient({ scheme: "muvie", storagePrefix: "muvie", storage: SecureStore })]
       : []),
     magicLinkClient(),
   ],

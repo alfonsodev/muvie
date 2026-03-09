@@ -32,6 +32,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
+          <string>muvie</string>
           <string>Muvie</string>
           <string>chat.muvie.app</string>
         </array>

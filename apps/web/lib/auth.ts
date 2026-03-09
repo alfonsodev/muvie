@@ -9,7 +9,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 export const auth = betterAuth({
   database: db,
   trustedOrigins: [
-    "muvi://",
+    "muvie://",
     "https://muvie.chat",
     ...(process.env.NODE_ENV === "development"
       ? [
