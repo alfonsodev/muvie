@@ -392,16 +392,16 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     tools,
     stopWhen: stepCountIs(5),
-    onStepFinish: ({ text, toolCalls, toolResults, stepType }) => {
+    onStepFinish: ({ text, toolCalls, toolResults }) => {
       if (text?.trim()) {
         console.log(`[assistant] ${text.trim().slice(0, 300)}`);
       }
       if (toolCalls?.length) {
-        console.log(`[chat] tools=[${toolCalls.map((c) => c.toolName).join(", ")}]`);
+        console.log(`[chat] tools=[${toolCalls.map((c) => c?.toolName).join(", ")}]`);
       }
       if (toolResults?.length) {
         for (const r of toolResults) {
-          console.log(`[chat] toolResult=${r.toolName} ok=${!("error" in r)}`);
+          if (r) console.log(`[chat] toolResult=${r.toolName} ok=${!("error" in r)}`);
         }
       }
     },
