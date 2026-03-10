@@ -4,7 +4,7 @@
   <dict>
     <key>com.apple.developer.associated-domains</key>
     <array>
-      <string>webcredentials:muvie.chat</string>
+      <string>webcredentials:muvie.org</string>
     </array>
   </dict>
 </plist>

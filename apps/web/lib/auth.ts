@@ -1,17 +1,25 @@
 import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { bearer, magicLink } from "better-auth/plugins";
-import { db } from "./db";
 import { Resend } from "resend";
+import { db } from "./db";
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL,
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
   database: db,
   trustedOrigins: [
     "muvie://",
     "https://muvie.org",
-    "https://muvie.chat",
     ...(process.env.NODE_ENV === "development"
       ? [
           "exp://",
@@ -29,7 +37,7 @@ export const auth = betterAuth({
       sendMagicLink: async ({ email, url }) => {
         if (resend) {
           await resend.emails.send({
-            from: "Muvi <noreply@updates.muvie.chat>",
+            from: "Muvi <noreply@notify.muvie.org>",
             to: email,
             subject: "Your Muvi sign-in link",
             html: `

@@ -4,9 +4,9 @@ import { passkeyStore } from "@/lib/passkey-store";
 import { auth } from "@/lib/auth";
 import { isoBase64URL } from "@simplewebauthn/server/helpers";
 
-const RP_ID = process.env.PASSKEY_RP_ID ?? "muvie.chat";
+const RP_ID = process.env.PASSKEY_RP_ID ?? "muvie.org";
 const ORIGINS = [
-  process.env.PASSKEY_ORIGIN ?? "https://muvie.chat",
+  process.env.PASSKEY_ORIGIN ?? "https://muvie.org",
   "ios:bundle-id:chat.muvie.app",
 ];
 const CHALLENGE_PREFIX = "login:";

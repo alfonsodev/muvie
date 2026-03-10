@@ -14,7 +14,7 @@ function getBaseUrl(): string {
     const ip = Constants.expoConfig?.hostUri?.split(":")[0] ?? "localhost";
     return `http://${ip}:3000`;
   }
-  return "https://muvie.chat";
+  return "https://muvie.org";
 }
 
 export const BASE_URL = getBaseUrl();

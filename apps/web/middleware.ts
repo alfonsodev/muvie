@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const ALLOWED_ORIGINS = [
-  "https://muvie.chat",
+  "https://muvie.org",
   "http://localhost:3000",
   "http://localhost:8081",
 ];

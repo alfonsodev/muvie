@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "chat.muvie.app",
       "associatedDomains": [
-        "webcredentials:muvie.chat"
+        "webcredentials:muvie.org"
       ],
       "appleTeamId": "5D7S45GFCL",
       "infoPlist": {
