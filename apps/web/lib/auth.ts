@@ -10,6 +10,7 @@ export const auth = betterAuth({
   database: db,
   trustedOrigins: [
     "muvie://",
+    "https://muvie.org",
     "https://muvie.chat",
     ...(process.env.NODE_ENV === "development"
       ? [
