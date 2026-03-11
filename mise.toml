@@ -6,7 +6,10 @@ run = [
 'eas submit --platform ios --latest'
 ]
 [tasks.publish]
-run = 'cd apps/mobile && eas build --platform ios --profile production --auto-submit'
+run = [
+  'node apps/mobile/scripts/set-build-meta.js',
+  'cd apps/mobile && eas build --platform ios --profile production --auto-submit'
+]
 
 [tasks.log]
 run = 'sudo docker logs -f muvie-web'

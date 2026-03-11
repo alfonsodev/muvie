@@ -32,6 +32,8 @@ function GoogleIcon() {
 
 // ── Debug modal ───────────────────────────────────────────────────────────────
 
+type DebugRow = { label: string; value: string; desc: string };
+
 function DebugModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const [bearerStored, setBearerStored] = useState("checking…");
 
@@ -44,19 +46,59 @@ function DebugModal({ visible, onClose }: { visible: boolean; onClose: () => voi
   }, [visible]);
 
   const extra = Constants.expoConfig?.extra;
+  const gitCommit = (extra?.gitCommit as string | undefined) ?? "unknown";
 
-  const rows: { label: string; value: string }[] = [
-    { label: "BASE_URL",            value: BASE_URL },
-    { label: "EXPO_PUBLIC_API_URL", value: process.env.EXPO_PUBLIC_API_URL ?? "(not set)" },
-    { label: "__DEV__",             value: String(__DEV__) },
-    { label: "Platform.OS",         value: Platform.OS },
-    { label: "Platform.Version",    value: String(Platform.Version) },
-    { label: "hostUri",             value: Constants.expoConfig?.hostUri ?? "(not set)" },
-    { label: "app name",            value: Constants.expoConfig?.name ?? "(not set)" },
-    { label: "app version",         value: Constants.expoConfig?.version ?? "(not set)" },
-    { label: "scheme",              value: (Constants.expoConfig?.scheme as string | undefined) ?? "(not set)" },
-    { label: "Bearer token",        value: bearerStored },
-    { label: "extra",               value: extra ? JSON.stringify(extra, null, 2) : "(none)" },
+  const rows: DebugRow[] = [
+    {
+      label: "BASE_URL",
+      value: BASE_URL,
+      desc: "Computed API base. Points to localhost in dev, muvie.org in prod, or EXPO_PUBLIC_API_URL if set.",
+    },
+    {
+      label: "EXPO_PUBLIC_API_URL",
+      value: process.env.EXPO_PUBLIC_API_URL ?? "(not set)",
+      desc: "Manually override the API URL — useful for staging. Overrides the auto-detected dev IP.",
+    },
+    {
+      label: "__DEV__",
+      value: String(__DEV__),
+      desc: "True when running in Expo Go or a debug build. False in production builds.",
+    },
+    {
+      label: "Platform.OS",
+      value: Platform.OS,
+      desc: "Current platform: ios, android, or web.",
+    },
+    {
+      label: "Platform.Version",
+      value: String(Platform.Version),
+      desc: "OS version number (e.g. iOS 17.4 or Android API level 34).",
+    },
+    {
+      label: "hostUri",
+      value: Constants.expoConfig?.hostUri ?? "(not set)",
+      desc: "Expo dev-server address (host:port). Used to auto-derive the dev API IP when no EXPO_PUBLIC_API_URL is set.",
+    },
+    {
+      label: "app version",
+      value: Constants.expoConfig?.version ?? "(not set)",
+      desc: "Version from app.json. Shown in the App Store / Play Store listing.",
+    },
+    {
+      label: "scheme",
+      value: (Constants.expoConfig?.scheme as string | undefined) ?? "(not set)",
+      desc: "Deep-link URL scheme (muvie://). Must match the scheme registered for OAuth and magic-link callbacks.",
+    },
+    {
+      label: "Bearer token",
+      value: bearerStored,
+      desc: "Session token stored in SecureStore after passkey sign-in. Sent as Authorization header on every API request.",
+    },
+    {
+      label: "EAS projectId",
+      value: (extra?.eas?.projectId as string | undefined) ?? "(not set)",
+      desc: "Expo Application Services project ID. Required for EAS Build and OTA updates.",
+    },
   ];
 
   return (
@@ -64,6 +106,8 @@ function DebugModal({ visible, onClose }: { visible: boolean; onClose: () => voi
       <Pressable style={dbStyles.backdrop} onPress={onClose} />
       <View style={dbStyles.sheet}>
         <View style={dbStyles.handle} />
+
+        {/* Header */}
         <View style={dbStyles.header}>
           <View style={dbStyles.titleRow}>
             <Ionicons name="bug-outline" size={17} color={T.primary} />
@@ -73,11 +117,20 @@ function DebugModal({ visible, onClose }: { visible: boolean; onClose: () => voi
             <Ionicons name="close" size={22} color={T.muted} />
           </TouchableOpacity>
         </View>
+
+        {/* Git commit hash banner */}
+        <View style={dbStyles.commitBanner}>
+          <Ionicons name="git-commit-outline" size={14} color={T.primary} />
+          <Text style={dbStyles.commitLabel}>commit</Text>
+          <Text style={dbStyles.commitHash} selectable>{gitCommit}</Text>
+        </View>
+
         <ScrollView contentContainerStyle={dbStyles.list} showsVerticalScrollIndicator={false}>
           {rows.map((r) => (
             <View key={r.label} style={dbStyles.row}>
               <Text style={dbStyles.rowLabel}>{r.label}</Text>
               <Text style={dbStyles.rowValue} selectable>{r.value}</Text>
+              <Text style={dbStyles.rowDesc}>{r.desc}</Text>
             </View>
           ))}
           <View style={{ height: 32 }} />
@@ -520,12 +573,36 @@ const dbStyles = StyleSheet.create({
     fontWeight: "700",
     color: T.text,
   },
+  commitBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: T.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  commitLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: T.dim,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  commitHash: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: T.primary,
+    fontVariant: ["tabular-nums"],
+    letterSpacing: 0.5,
+  },
   list: {
     paddingHorizontal: 20,
     paddingTop: 4,
   },
   row: {
-    paddingVertical: 11,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: T.border,
     gap: 3,
@@ -539,8 +616,14 @@ const dbStyles = StyleSheet.create({
   },
   rowValue: {
     fontSize: 13,
-    color: T.muted,
+    color: T.text,
     lineHeight: 18,
     fontVariant: ["tabular-nums"],
+  },
+  rowDesc: {
+    fontSize: 12,
+    color: T.dim,
+    lineHeight: 17,
+    marginTop: 2,
   },
 });
