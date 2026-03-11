@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#af25f4",
+                        "background-light": "#f7f5f8",
+                        "background-dark": "#1c1022",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="flex items-center bg-background-light dark:bg-background-dark p-4 sticky top-0 z-10 border-b border-primary/10">
+<button class="flex size-10 items-center justify-center rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">arrow_back</span>
+</button>
+<h1 class="flex-1 text-center text-lg font-bold tracking-tight pr-10">Complete Profile</h1>
+</header>
+<main class="flex-1 max-w-md mx-auto w-full px-4 py-6">
+<!-- Profile Picture Section -->
+<div class="flex flex-col items-center gap-4 mb-8">
+<div class="relative group">
+<div class="size-32 rounded-full overflow-hidden border-4 border-primary/20 bg-primary/5">
+<img alt="User avatar placeholder" class="w-full h-full object-cover" data-alt="Modern minimalist user profile avatar portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFtRhzyQm1-AZ3zjIG_GHGkA2FJhYCCaxqKPSx5he-lMl_EydvMD4e5Sq-yhvNg0zrTUd1UXng_Amc1TgNKH7MfgklrFCePlrEG0VqYTBKwEWfOmtoYh5pXlw6XoJdz8MAF--4q7n_hWAX-F8yqmAS45zkYdUosfkud2_WUDmEA1VPU6aSUF5zIC_TbF57rerr8JUyLGWq7IZWIN3KWUEr9gqqX2bsEMeAvsbMEOW7kmq4EGqlFaepLKimX0jSSjrhDsLG24_gzc4"/>
+</div>
+<button class="absolute bottom-0 right-0 bg-primary p-2 rounded-full shadow-lg border-2 border-background-dark text-white hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-sm">edit</span>
+</button>
+</div>
+<div class="text-center">
+<h2 class="text-xl font-bold">Upload Photo</h2>
+<p class="text-primary/70 text-sm">Make your profile stand out</p>
+</div>
+</div>
+<!-- Form Fields -->
+<div class="space-y-6">
+<!-- Name Input -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Full Name</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/60">person</span>
+<input class="w-full h-14 pl-12 pr-4 rounded-xl border border-primary/20 bg-white dark:bg-primary/5 focus:border-primary focus:ring-1 focus:ring-primary transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" placeholder="Enter your name" type="text"/>
+</div>
+</div>
+<!-- Birthdate Input -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Birthdate</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/60">calendar_month</span>
+<select class="w-full h-14 pl-12 pr-10 rounded-xl border border-primary/20 bg-white dark:bg-primary/5 appearance-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-slate-900 dark:text-slate-100">
+<option disabled="" selected="" value="">Select your birthdate</option>
+<option>January 1990</option>
+<option>February 1990</option>
+<option>March 1990</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">expand_more</span>
+</div>
+</div>
+<!-- Favorite Genres -->
+<div class="space-y-3">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Favorite Genres</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-full border border-primary bg-primary/10 text-primary text-sm font-medium">Sci-Fi</button>
+<button class="px-4 py-2 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 text-slate-600 dark:text-slate-300 text-sm font-medium transition-colors">Action</button>
+<button class="px-4 py-2 rounded-full border border-primary bg-primary text-white text-sm font-medium">Drama</button>
+<button class="px-4 py-2 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 text-slate-600 dark:text-slate-300 text-sm font-medium transition-colors">Horror</button>
+<button class="px-4 py-2 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 text-slate-600 dark:text-slate-300 text-sm font-medium transition-colors">Comedy</button>
+<button class="px-4 py-2 rounded-full border border-primary bg-primary text-white text-sm font-medium">Thriller</button>
+<button class="px-4 py-2 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 text-slate-600 dark:text-slate-300 text-sm font-medium transition-colors">Fantasy</button>
+</div>
+</div>
+<!-- Bio Section -->
+<div class="flex flex-col gap-2">
+<label class="text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Bio (Optional)</label>
+<textarea class="w-full p-4 rounded-xl border border-primary/20 bg-white dark:bg-primary/5 focus:border-primary focus:ring-1 focus:ring-primary transition-all text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none" placeholder="Tell us about your movie taste..." rows="3"></textarea>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="mt-10 space-y-3">
+<button class="w-full h-14 rounded-xl bg-primary text-white font-bold text-lg hover:bg-opacity-90 transition-all shadow-lg shadow-primary/20">
+                    Save Profile
+                </button>
+<button class="w-full h-14 rounded-xl bg-transparent border border-primary/30 text-primary font-semibold hover:bg-primary/5 transition-all">
+                    Skip for now
+                </button>
+</div>
+</main>
+<!-- Bottom Spacing for mobile view -->
+<div class="h-8"></div>
+</div>
+</body></html>

@@ -1,30 +1,93 @@
-import { authClient, BEARER_KEY } from "@/lib/auth-client";
+import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
 import { isPasskeySupported, isUserCancelledError, signInWithPasskey } from "@/lib/passkey";
+import { T } from "@/lib/theme";
+import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-
-const C = {
-  bg: "#121212",
-  surface: "#1e1e1e",
-  border: "#2e2e2e",
-  borderFocus: "#6c63ff",
-  text: "#ececec",
-  muted: "#8e8ea0",
-  accent: "#6c63ff",
-  error: "#ff6b6b",
-};
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Stage = "input" | "sent" | "loading";
+
+function GoogleIcon() {
+  return (
+    <View style={styles.googleIconBox}>
+      <Text style={styles.googleIconText}>G</Text>
+    </View>
+  );
+}
+
+// ── Debug modal ───────────────────────────────────────────────────────────────
+
+function DebugModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const [bearerStored, setBearerStored] = useState("checking…");
+
+  useEffect(() => {
+    if (!visible) return;
+    if (Platform.OS === "web") { setBearerStored("n/a (web)"); return; }
+    import("expo-secure-store")
+      .then((SS) => SS.getItemAsync(BEARER_KEY))
+      .then((t) => setBearerStored(t ? `stored (${t.slice(0, 8)}…)` : "not stored"));
+  }, [visible]);
+
+  const extra = Constants.expoConfig?.extra;
+
+  const rows: { label: string; value: string }[] = [
+    { label: "BASE_URL",            value: BASE_URL },
+    { label: "EXPO_PUBLIC_API_URL", value: process.env.EXPO_PUBLIC_API_URL ?? "(not set)" },
+    { label: "__DEV__",             value: String(__DEV__) },
+    { label: "Platform.OS",         value: Platform.OS },
+    { label: "Platform.Version",    value: String(Platform.Version) },
+    { label: "hostUri",             value: Constants.expoConfig?.hostUri ?? "(not set)" },
+    { label: "app name",            value: Constants.expoConfig?.name ?? "(not set)" },
+    { label: "app version",         value: Constants.expoConfig?.version ?? "(not set)" },
+    { label: "scheme",              value: (Constants.expoConfig?.scheme as string | undefined) ?? "(not set)" },
+    { label: "Bearer token",        value: bearerStored },
+    { label: "extra",               value: extra ? JSON.stringify(extra, null, 2) : "(none)" },
+  ];
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <Pressable style={dbStyles.backdrop} onPress={onClose} />
+      <View style={dbStyles.sheet}>
+        <View style={dbStyles.handle} />
+        <View style={dbStyles.header}>
+          <View style={dbStyles.titleRow}>
+            <Ionicons name="bug-outline" size={17} color={T.primary} />
+            <Text style={dbStyles.title}>Runtime Config</Text>
+          </View>
+          <TouchableOpacity onPress={onClose} hitSlop={12}>
+            <Ionicons name="close" size={22} color={T.muted} />
+          </TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={dbStyles.list} showsVerticalScrollIndicator={false}>
+          {rows.map((r) => (
+            <View key={r.label} style={dbStyles.row}>
+              <Text style={dbStyles.rowLabel}>{r.label}</Text>
+              <Text style={dbStyles.rowValue} selectable>{r.value}</Text>
+            </View>
+          ))}
+          <View style={{ height: 32 }} />
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+// ── Main screen ───────────────────────────────────────────────────────────────
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -32,7 +95,9 @@ export default function SignInScreen() {
   const [stage, setStage] = useState<Stage>("input");
   const [error, setError] = useState<string | null>(null);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [hasRegisteredPasskey, setHasRegisteredPasskey] = useState(false);
+  const [debugVisible, setDebugVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   const passkeySupported = isPasskeySupported();
@@ -66,6 +131,21 @@ export default function SignInScreen() {
     }
   }
 
+  async function handleGoogleSignIn() {
+    setGoogleLoading(true);
+    setError(null);
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: `${BASE_URL}/auth/app-callback`,
+      });
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? "Google sign-in failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
+
   async function handlePasskeySignIn() {
     setPasskeyLoading(true);
     setError(null);
@@ -93,210 +173,374 @@ export default function SignInScreen() {
   // ── Sent state ────────────────────────────────────────────────────────────
   if (stage === "sent") {
     return (
-      <View style={styles.container}>
-        <View style={styles.logoArea}>
-          <Text style={styles.sentIcon}>📬</Text>
+      <SafeAreaView style={styles.root}>
+        <View style={styles.center}>
+          <View style={styles.iconBox}>
+            <Ionicons name="mail-outline" size={40} color={T.primary} />
+          </View>
           <Text style={styles.title}>Check your email</Text>
           <Text style={styles.subtitle}>
             We sent a sign-in link to{"\n"}
-            <Text style={styles.emailHighlight}>
-              {email.trim().toLowerCase()}
-            </Text>
+            <Text style={styles.emailHighlight}>{email.trim().toLowerCase()}</Text>
           </Text>
           <Text style={[styles.subtitle, { marginTop: 8 }]}>
-            Tap the link in your email — this tab will close automatically once
-            you're signed in.
+            Tap the link in your email — this tab will close automatically once you're signed in.
           </Text>
+          <TouchableOpacity
+            style={[styles.secondaryBtn, { marginTop: 32 }]}
+            onPress={() => { setStage("input"); setError(null); }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.secondaryLabel}>Use a different email</Text>
+          </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={styles.secondaryButton}
-          onPress={() => {
-            setStage("input");
-            setError(null);
-          }}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.secondaryLabel}>Use a different email</Text>
-        </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // ── Input state ───────────────────────────────────────────────────────────
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <View style={styles.logoArea}>
-        <Text style={styles.logo}>🎬</Text>
-        <Text style={styles.title}>Muvie</Text>
-        <Text style={styles.subtitle}>Your personal movie companion</Text>
-      </View>
+    <SafeAreaView style={styles.root}>
+      <DebugModal visible={debugVisible} onClose={() => setDebugVisible(false)} />
 
-      <View style={styles.actions}>
-        {error && <Text style={styles.errorText}>{error}</Text>}
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        {/* Logo — tap to open debug panel */}
+        <View style={styles.logoArea}>
+          <TouchableOpacity
+            style={styles.iconBox}
+            onPress={() => setDebugVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="film-outline" size={40} color={T.primary} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Muvie</Text>
+          <Text style={styles.subtitle}>Your personal cinema guide</Text>
+        </View>
 
-        <TextInput
-          ref={inputRef}
-          style={styles.input}
-          value={email}
-          onChangeText={(v) => {
-            setEmail(v);
-            setError(null);
-          }}
-          placeholder="your@email.com"
-          placeholderTextColor={C.muted}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="go"
-          onSubmitEditing={handleSendLink}
-          editable={stage !== "loading"}
-        />
+        {/* Form */}
+        <View style={styles.form}>
+          {error && <Text style={styles.errorText}>{error}</Text>}
 
-        <TouchableOpacity
-          style={[
-            styles.primaryButton,
-            stage === "loading" && styles.buttonDisabled,
-          ]}
-          onPress={handleSendLink}
-          disabled={stage === "loading"}
-          activeOpacity={0.8}
-        >
-          {stage === "loading" ? (
-            <ActivityIndicator color={C.text} />
-          ) : (
-            <Text style={styles.primaryLabel}>Send magic link</Text>
-          )}
-        </TouchableOpacity>
+          {/* Email field */}
+          <View style={styles.fieldLabel}>
+            <Text style={styles.label}>Email address</Text>
+          </View>
+          <View style={styles.inputWrap}>
+            <Ionicons name="mail-outline" size={20} color={T.dim} style={styles.inputIcon} />
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={email}
+              onChangeText={(v) => { setEmail(v); setError(null); }}
+              placeholder="name@example.com"
+              placeholderTextColor={T.dim}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="go"
+              onSubmitEditing={handleSendLink}
+              editable={stage !== "loading"}
+            />
+          </View>
 
-        {passkeySupported && hasRegisteredPasskey && (
-          <>
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
+          {/* Primary CTA */}
+          <TouchableOpacity
+            style={[styles.primaryBtn, stage === "loading" && styles.btnDisabled]}
+            onPress={handleSendLink}
+            disabled={stage === "loading"}
+            activeOpacity={0.85}
+          >
+            {stage === "loading" ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.primaryLabel}>Send magic link</Text>
+            )}
+          </TouchableOpacity>
 
+          {/* Social options */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>or continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google */}
+          <TouchableOpacity
+            style={[styles.socialBtn, googleLoading && styles.btnDisabled]}
+            onPress={handleGoogleSignIn}
+            disabled={googleLoading}
+            activeOpacity={0.8}
+          >
+            {googleLoading ? (
+              <ActivityIndicator color={T.muted} />
+            ) : (
+              <>
+                <GoogleIcon />
+                <Text style={styles.socialLabel}>Sign in with Google</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Face ID */}
+          {passkeySupported && hasRegisteredPasskey && (
             <TouchableOpacity
-              style={[
-                styles.secondaryButton,
-                passkeyLoading && styles.buttonDisabled,
-              ]}
+              style={[styles.socialBtn, passkeyLoading && styles.btnDisabled]}
               onPress={handlePasskeySignIn}
               disabled={passkeyLoading}
               activeOpacity={0.8}
             >
               {passkeyLoading ? (
-                <ActivityIndicator color={C.muted} />
+                <ActivityIndicator color={T.muted} />
               ) : (
-                <Text style={styles.secondaryLabel}>Sign in with Face ID</Text>
+                <>
+                  <Ionicons name="finger-print-outline" size={20} color={T.text} />
+                  <Text style={styles.socialLabel}>Sign in with Face ID</Text>
+                </>
               )}
             </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </KeyboardAvoidingView>
+          )}
+        </View>
+
+        <View style={styles.footer} />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: C.bg,
-    justifyContent: "space-between",
-    paddingHorizontal: 32,
-    paddingTop: 120,
-    paddingBottom: 60,
-  },
+  root: { flex: 1, backgroundColor: T.bg },
+  flex: { flex: 1, paddingHorizontal: 28 },
+
   logoArea: {
     alignItems: "center",
+    paddingTop: 72,
+    paddingBottom: 40,
     gap: 12,
   },
-  logo: {
-    fontSize: 72,
-  },
-  sentIcon: {
-    fontSize: 64,
+  iconBox: {
+    width: 76,
+    height: 76,
+    borderRadius: 20,
+    backgroundColor: T.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: T.border,
+    marginBottom: 4,
   },
   title: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: "700",
-    color: C.text,
+    color: T.text,
     letterSpacing: -0.5,
-    textAlign: "center",
   },
   subtitle: {
     fontSize: 15,
-    color: C.muted,
+    color: T.muted,
     textAlign: "center",
     lineHeight: 22,
   },
   emailHighlight: {
-    color: C.text,
+    color: T.text,
     fontWeight: "600",
   },
-  actions: {
-    gap: 12,
+
+  form: { gap: 12 },
+  fieldLabel: { marginBottom: -4 },
+  label: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: T.muted,
+    marginLeft: 4,
   },
-  input: {
-    backgroundColor: C.surface,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: C.border,
-    paddingHorizontal: 16,
-    height: 52,
-    fontSize: 16,
-    color: C.text,
-  },
-  primaryButton: {
-    backgroundColor: C.accent,
+  inputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: T.surfaceWhite,
     borderRadius: 14,
+    borderWidth: 1,
+    borderColor: T.borderWhite,
     height: 56,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  inputIcon: { flexShrink: 0 },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: T.text,
+    paddingVertical: 0,
+  },
+
+  primaryBtn: {
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: T.primary,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 4,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   primaryLabel: {
     fontSize: 17,
-    fontWeight: "600",
-    color: C.text,
+    fontWeight: "700",
+    color: "#fff",
   },
-  secondaryButton: {
-    borderWidth: 1.5,
-    borderColor: C.border,
-    borderRadius: 14,
-    height: 56,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  secondaryLabel: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: C.muted,
-  },
-  divider: {
+  btnDisabled: { opacity: 0.5 },
+
+  dividerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     marginVertical: 4,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: C.border,
+    backgroundColor: T.borderWhite,
   },
   dividerText: {
-    color: C.muted,
-    fontSize: 13,
+    fontSize: 12,
+    color: T.dim,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
+  socialBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    height: 56,
+    borderRadius: 14,
+    backgroundColor: T.surfaceWhite,
+    borderWidth: 1,
+    borderColor: T.borderWhite,
+  },
+  socialLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: T.text,
+  },
+
+  secondaryBtn: {
+    borderWidth: 1,
+    borderColor: T.border,
+    borderRadius: 14,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  secondaryLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: T.muted,
+  },
+
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+    gap: 12,
   },
   errorText: {
     fontSize: 13,
-    color: C.error,
+    color: T.error,
     textAlign: "center",
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  footer: { height: 32 },
+
+  googleIconBox: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleIconText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4285F4",
+    lineHeight: 16,
+  },
+});
+
+// ── Debug modal styles ────────────────────────────────────────────────────────
+
+const dbStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+  },
+  sheet: {
+    backgroundColor: "#180d24",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: T.border,
+    maxHeight: "72%",
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: T.border,
+    alignSelf: "center",
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: T.text,
+  },
+  list: {
+    paddingHorizontal: 20,
+    paddingTop: 4,
+  },
+  row: {
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    gap: 3,
+  },
+  rowLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: T.primary,
+    textTransform: "uppercase",
+    letterSpacing: 0.9,
+  },
+  rowValue: {
+    fontSize: 13,
+    color: T.muted,
+    lineHeight: 18,
+    fontVariant: ["tabular-nums"],
   },
 });

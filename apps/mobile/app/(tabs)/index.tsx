@@ -1,5 +1,6 @@
 import { lang, t } from "@/i18n";
 import { BEARER_KEY } from "@/lib/auth-client";
+import { T } from "@/lib/theme";
 import { generateAPIUrl } from "@/utils";
 import { useChat } from "@ai-sdk/react";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,24 +23,21 @@ import {
 import Markdown from "react-native-markdown-display";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const C = {
-  bg: "#212121",
-  surface: "#2f2f2f",
-  border: "#3d3d3d",
-  text: "#ececec",
-  muted: "#8e8ea0",
-  sendActive: "#ececec",
-  sendInactive: "#3d3d3d",
-};
-
 const country = getLocales()[0]?.regionCode ?? "US";
 
-export default function ChatScreen() {
+const SUGGESTIONS = [
+  { icon: "people-outline" as const, label: t.suggestions[0] ?? "Movie for family" },
+  { icon: "rocket-outline" as const, label: t.suggestions[1] ?? "Best Sci-Fi" },
+  { icon: "heart-outline" as const, label: t.suggestions[2] ?? "Date night" },
+  { icon: "film-outline" as const, label: t.suggestions[3] ?? "Award winners" },
+];
+
+export default function HomeScreen() {
   const [bearerToken, setBearerToken] = React.useState<string | null>(null);
 
   useEffect(() => {
     if (Platform.OS === "web") { setBearerToken(""); return; }
-    SecureStore.getItemAsync(BEARER_KEY).then((t) => setBearerToken(t ?? ""));
+    SecureStore.getItemAsync(BEARER_KEY).then((tk) => setBearerToken(tk ?? ""));
   }, []);
 
   const transport = useMemo(
@@ -84,9 +82,14 @@ export default function ChatScreen() {
     <SafeAreaView style={styles.root}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Muvie</Text>
+        <View style={styles.headerLeft}>
+          <View style={styles.logoIcon}>
+            <Ionicons name="film-outline" size={20} color={T.primary} />
+          </View>
+          <Text style={styles.headerTitle}>Muvie</Text>
+        </View>
         <Pressable style={styles.headerAction} onPress={() => setMessages([])}>
-          <Ionicons name="create-outline" size={22} color={C.text} />
+          <Ionicons name="create-outline" size={22} color={T.text} />
         </Pressable>
       </View>
 
@@ -95,7 +98,6 @@ export default function ChatScreen() {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={0}
       >
-        {/* Message list */}
         <ScrollView
           ref={scrollRef}
           style={styles.flex}
@@ -121,7 +123,7 @@ export default function ChatScreen() {
           )}
         </ScrollView>
 
-        {/* Input bar */}
+        {/* Input */}
         <View style={styles.inputArea}>
           <View style={styles.inputRow}>
             <TextInput
@@ -130,25 +132,18 @@ export default function ChatScreen() {
               value={input}
               onChangeText={setInput}
               placeholder={t.inputPlaceholder}
-              placeholderTextColor={C.muted}
+              placeholderTextColor={T.dim}
               multiline
               maxLength={4000}
               onSubmitEditing={handleSend}
               returnKeyType="send"
             />
             <Pressable
-              style={[
-                styles.sendBtn,
-                canSend ? styles.sendBtnActive : styles.sendBtnInactive,
-              ]}
+              style={[styles.sendBtn, canSend ? styles.sendBtnActive : styles.sendBtnInactive]}
               onPress={handleSend}
               disabled={!canSend}
             >
-              <Ionicons
-                name="arrow-up"
-                size={18}
-                color={canSend ? C.bg : C.muted}
-              />
+              <Ionicons name="arrow-up" size={18} color={canSend ? "#fff" : T.dim} />
             </Pressable>
           </View>
           <Text style={styles.disclaimer}>{t.disclaimer}</Text>
@@ -158,23 +153,25 @@ export default function ChatScreen() {
   );
 }
 
-function EmptyState({
-  onSuggestion,
-}: {
-  onSuggestion: (text: string) => void;
-}) {
+function EmptyState({ onSuggestion }: { onSuggestion: (text: string) => void }) {
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyEmoji}>🎬</Text>
-      <Text style={styles.emptyTitle}>{t.emptyTitle}</Text>
+      <View style={styles.askHeader}>
+        <Ionicons name="sparkles" size={22} color={T.primary} />
+        <Text style={styles.askTitle}>Ask Muvie</Text>
+      </View>
+      <Text style={styles.askSubtitle}>{t.emptyTitle}</Text>
+
+      {/* Suggestion chips */}
       <View style={styles.chips}>
-        {t.suggestions.map((s) => (
+        {SUGGESTIONS.map((s) => (
           <Pressable
-            key={s}
+            key={s.label}
             style={styles.chip}
-            onPress={() => onSuggestion(s)}
+            onPress={() => onSuggestion(s.label)}
           >
-            <Text style={styles.chipText}>{s}</Text>
+            <Ionicons name={s.icon} size={16} color={T.primary} />
+            <Text style={styles.chipText}>{s.label}</Text>
           </Pressable>
         ))}
       </View>
@@ -197,15 +194,10 @@ function MessageRow({ message }: { message: any }) {
     <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
       {!isUser && (
         <View style={styles.avatar}>
-          <Text style={styles.avatarEmoji}>🎬</Text>
+          <Ionicons name="film-outline" size={14} color={T.primary} />
         </View>
       )}
-      <View
-        style={[
-          styles.bubble,
-          isUser ? styles.bubbleUser : styles.bubbleAssistant,
-        ]}
-      >
+      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
         {isUser ? (
           <Text style={styles.bubbleText}>{text}</Text>
         ) : (
@@ -220,10 +212,10 @@ function TypingIndicator() {
   return (
     <View style={[styles.row, styles.rowAssistant]}>
       <View style={styles.avatar}>
-        <Text style={styles.avatarEmoji}>🎬</Text>
+        <Ionicons name="film-outline" size={14} color={T.primary} />
       </View>
       <View style={styles.typingBubble}>
-        <ActivityIndicator size="small" color={C.muted} />
+        <ActivityIndicator size="small" color={T.primary} />
       </View>
     </View>
   );
@@ -231,37 +223,52 @@ function TypingIndicator() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  root: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
+  root: { flex: 1, backgroundColor: T.bg },
 
-  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: C.border,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+  },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  logoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: T.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: T.border,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: C.text,
-    letterSpacing: 0.3,
+    fontSize: 20,
+    fontWeight: "700",
+    color: T.text,
+    letterSpacing: -0.3,
   },
   headerAction: {
-    position: "absolute",
-    right: 16,
-    padding: 4,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: T.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: T.border,
   },
 
-  // Message list
   listContent: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 20,
     paddingBottom: 16,
     flexGrow: 1,
   },
@@ -269,29 +276,47 @@ const styles = StyleSheet.create({
   // Empty state
   empty: {
     flex: 1,
+    paddingTop: 32,
+    paddingHorizontal: 4,
+  },
+  askHeader: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 48,
-    paddingHorizontal: 8,
+    gap: 8,
+    marginBottom: 6,
   },
-  emptyEmoji: { fontSize: 52, marginBottom: 16 },
-  emptyTitle: {
-    fontSize: 22,
+  askTitle: {
+    fontSize: 26,
     fontWeight: "700",
-    color: C.text,
-    marginBottom: 28,
-    textAlign: "center",
+    color: T.text,
+    letterSpacing: -0.3,
   },
-  chips: { width: "100%", gap: 10 },
+  askSubtitle: {
+    fontSize: 14,
+    color: T.muted,
+    marginBottom: 20,
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
   chip: {
-    backgroundColor: C.surface,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    height: 40,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: T.surface,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: T.border,
   },
-  chipText: { color: C.text, fontSize: 15 },
+  chipText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: T.text,
+  },
 
   // Messages
   row: {
@@ -304,17 +329,16 @@ const styles = StyleSheet.create({
   rowAssistant: { justifyContent: "flex-start" },
 
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: C.surface,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: T.surface,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: T.border,
     marginBottom: 2,
   },
-  avatarEmoji: { fontSize: 15 },
 
   bubble: {
     maxWidth: "78%",
@@ -323,17 +347,19 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   bubbleUser: {
-    backgroundColor: C.surface,
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.border,
     borderBottomRightRadius: 4,
   },
   bubbleAssistant: {
     backgroundColor: "transparent",
     paddingHorizontal: 0,
     paddingVertical: 0,
-    maxWidth: "88%",
+    maxWidth: "90%",
   },
   bubbleText: {
-    color: C.text,
+    color: T.text,
     fontSize: 16,
     lineHeight: 24,
   },
@@ -344,37 +370,37 @@ const styles = StyleSheet.create({
 
   // Error
   errorBanner: {
-    backgroundColor: "#3d1c1c",
+    backgroundColor: "rgba(239,68,68,0.15)",
     borderRadius: 10,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#5c2c2c",
+    borderColor: "rgba(239,68,68,0.3)",
   },
-  errorText: { color: "#f87171", fontSize: 14 },
+  errorText: { color: T.error, fontSize: 14 },
 
   // Input
   inputArea: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 10,
     paddingBottom: Platform.OS === "ios" ? 8 : 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: C.border,
+    borderTopWidth: 1,
+    borderTopColor: T.border,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    backgroundColor: C.surface,
+    backgroundColor: T.surface,
     borderRadius: 26,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: T.border,
     paddingLeft: 16,
     paddingRight: 6,
     paddingVertical: 6,
   },
   input: {
     flex: 1,
-    color: C.text,
+    color: T.text,
     fontSize: 16,
     lineHeight: 22,
     maxHeight: 120,
@@ -389,10 +415,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 8,
   },
-  sendBtnActive: { backgroundColor: C.sendActive },
-  sendBtnInactive: { backgroundColor: C.sendInactive },
+  sendBtnActive: {
+    backgroundColor: T.primary,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  sendBtnInactive: { backgroundColor: T.surface },
   disclaimer: {
-    color: C.muted,
+    color: T.dim,
     fontSize: 12,
     textAlign: "center",
     marginTop: 8,
@@ -400,35 +433,20 @@ const styles = StyleSheet.create({
 });
 
 const markdownStyles = {
-  body: { color: C.text, fontSize: 16, lineHeight: 24 },
-  strong: { fontWeight: "700" as const, color: C.text },
+  body: { color: T.text, fontSize: 16, lineHeight: 24 },
+  strong: { fontWeight: "700" as const, color: T.text },
   em: { fontStyle: "italic" as const },
-  link: { color: "#6c63ff" },
+  link: { color: T.primary },
   bullet_list: { marginVertical: 4 },
   ordered_list: { marginVertical: 4 },
   list_item: { marginBottom: 4 },
   paragraph: { marginTop: 0, marginBottom: 8 },
-  heading1: {
-    color: C.text,
-    fontSize: 20,
-    fontWeight: "700" as const,
-    marginBottom: 8,
-  },
-  heading2: {
-    color: C.text,
-    fontSize: 18,
-    fontWeight: "700" as const,
-    marginBottom: 6,
-  },
-  heading3: {
-    color: C.text,
-    fontSize: 16,
-    fontWeight: "700" as const,
-    marginBottom: 4,
-  },
+  heading1: { color: T.text, fontSize: 20, fontWeight: "700" as const, marginBottom: 8 },
+  heading2: { color: T.text, fontSize: 18, fontWeight: "700" as const, marginBottom: 6 },
+  heading3: { color: T.text, fontSize: 16, fontWeight: "700" as const, marginBottom: 4 },
   code_inline: {
-    backgroundColor: "#2f2f2f",
-    color: "#ececec",
+    backgroundColor: T.surface,
+    color: T.text,
     borderRadius: 4,
     paddingHorizontal: 4,
   },

@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>es</string>
     <key>CFBundleDisplayName</key>
-    <string>Muvie</string>
+    <string>muvi</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -33,7 +33,6 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>muvie</string>
-          <string>Muvie</string>
           <string>chat.muvie.app</string>
         </array>
       </dict>
@@ -46,8 +45,6 @@
     <true/>
     <key>NSAppTransportSecurity</key>
     <dict>
-      <key>NSAllowsArbitraryLoads</key>
-      <false/>
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>

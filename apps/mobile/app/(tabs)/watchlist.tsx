@@ -1,4 +1,5 @@
 import { BEARER_KEY, BASE_URL } from "@/lib/auth-client";
+import { T } from "@/lib/theme";
 import { Image } from "expo-image";
 import { getLocales } from "expo-localization";
 import * as Linking from "expo-linking";
@@ -17,14 +18,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const C = {
-  bg: "#212121",
-  surface: "#2f2f2f",
-  border: "#3d3d3d",
-  text: "#ececec",
-  muted: "#8e8ea0",
-  accent: "#6c63ff",
+  bg: T.bg,
+  surface: T.surface,
+  border: T.border,
+  text: T.text,
+  muted: T.muted,
+  accent: T.primary,
   watched: "#22c55e",
-  toWatch: "#6c63ff",
+  toWatch: T.primary,
 };
 
 const TMDB_IMAGE = "https://image.tmdb.org/t/p";
@@ -272,14 +273,14 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     borderBottomColor: C.border,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
+    fontSize: 20,
+    fontWeight: "700",
     color: C.text,
-    letterSpacing: 0.3,
+    letterSpacing: -0.3,
     textAlign: "center",
   },
 
@@ -301,6 +302,11 @@ const styles = StyleSheet.create({
   filterBtnActive: {
     backgroundColor: C.accent,
     borderColor: C.accent,
+    shadowColor: C.accent,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   filterLabel: {
     fontSize: 13,

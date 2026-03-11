@@ -1,12 +1,8 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-
+import { Ionicons } from '@expo/vector-icons';
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-
-const TAB_BG = '#171717';
-const TAB_ACTIVE = '#ececec';
-const TAB_INACTIVE = '#555557';
+import { T } from '@/lib/theme';
 
 export default function TabLayout() {
   return (
@@ -14,24 +10,44 @@ export default function TabLayout() {
       screenOptions={{
         headerShown: false,
         tabBarButton: HapticTab,
-        tabBarActiveTintColor: TAB_ACTIVE,
-        tabBarInactiveTintColor: TAB_INACTIVE,
+        tabBarActiveTintColor: T.primary,
+        tabBarInactiveTintColor: T.dim,
         tabBarStyle: {
-          backgroundColor: TAB_BG,
-          borderTopColor: '#2f2f2f',
+          backgroundColor: T.bg,
+          borderTopColor: T.border,
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
+          fontSize: 10,
+          fontWeight: '600',
+          textTransform: 'uppercase',
+          letterSpacing: 0.5,
         },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Chat',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name="bubble.left.and.bubble.right.fill" color={color} />
+          title: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="explore"
+        options={{
+          title: 'Explore',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'time' : 'time-outline'} size={24} color={color} />
           ),
         }}
       />
@@ -39,8 +55,8 @@ export default function TabLayout() {
         name="watchlist"
         options={{
           title: 'My List',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name="bookmark.fill" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={24} color={color} />
           ),
         }}
       />
@@ -48,14 +64,10 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={26} name="person.fill" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),
         }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{ href: null }}
       />
     </Tabs>
   );

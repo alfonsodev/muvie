@@ -8,23 +8,17 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { generateUsername, generateAvatarSeed, avatarColorFromSeed } from "@/lib/username";
 import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
 import { registerPasskey, isPasskeySupported } from "@/lib/passkey";
+import { T } from "@/lib/theme";
+import { Ionicons } from "@expo/vector-icons";
 
-const C = {
-  bg: "#121212",
-  surface: "#1e1e1e",
-  border: "#2e2e2e",
-  borderFocus: "#6c63ff",
-  text: "#ececec",
-  muted: "#8e8ea0",
-  accent: "#6c63ff",
-  error: "#ff6b6b",
-};
+const GENRES = ["Sci-Fi", "Action", "Drama", "Horror", "Comedy", "Thriller", "Fantasy", "Romance"];
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -35,6 +29,7 @@ export default function OnboardingScreen() {
   const [focused, setFocused] = useState(false);
   const [saving, setSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
   const avatarColor = avatarColorFromSeed(seed);
   const avatarLetter = username.charAt(0).toUpperCase();
@@ -49,6 +44,12 @@ export default function OnboardingScreen() {
   function handleChange(value: string) {
     setUsername(value);
     setValidationError(validateUsername(value));
+  }
+
+  function toggleGenre(genre: string) {
+    setSelectedGenres((prev) =>
+      prev.includes(genre) ? prev.filter((g) => g !== genre) : [...prev, genre]
+    );
   }
 
   async function handleSave() {
@@ -88,11 +89,7 @@ export default function OnboardingScreen() {
           "Enable Face ID sign-in?",
           "Sign in instantly next time with Face ID — no email needed.",
           [
-            {
-              text: "Skip",
-              style: "cancel",
-              onPress: () => router.replace("/(tabs)"),
-            },
+            { text: "Skip", style: "cancel", onPress: () => router.replace("/(tabs)") },
             {
               text: "Enable",
               onPress: async () => {
@@ -131,29 +128,34 @@ export default function OnboardingScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.inner}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Choose your name</Text>
-          <Text style={styles.subtitle}>
-            This is how other Muvi users will see you
-          </Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Complete Profile</Text>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        {/* Avatar */}
+        <View style={styles.avatarSection}>
+          <TouchableOpacity style={styles.avatarWrap} onPress={handleShuffle} activeOpacity={0.8}>
+            <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
+              <Text style={styles.avatarLetter}>{avatarLetter}</Text>
+            </View>
+            <View style={styles.editBadge}>
+              <Ionicons name="pencil" size={14} color="#fff" />
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.uploadTitle}>Choose your username</Text>
+          <Text style={styles.uploadSubtitle}>Tap avatar to shuffle color</Text>
         </View>
 
-        {/* Avatar */}
-        <TouchableOpacity style={styles.avatarWrap} onPress={handleShuffle} activeOpacity={0.8}>
-          <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
-            <Text style={styles.avatarLetter}>{avatarLetter}</Text>
-          </View>
-          <Text style={styles.shuffleHint}>Tap to shuffle</Text>
-        </TouchableOpacity>
-
         {/* Username input */}
-        <View style={styles.inputSection}>
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Username</Text>
           <View style={[styles.inputWrap, focused && styles.inputWrapFocused]}>
-            <Text style={styles.at}>@</Text>
+            <Ionicons name="at" size={18} color={T.dim} style={styles.inputIcon} />
             <TextInput
               ref={inputRef}
               style={styles.input}
@@ -166,131 +168,176 @@ export default function OnboardingScreen() {
               maxLength={30}
               returnKeyType="done"
               onSubmitEditing={handleSave}
-              placeholderTextColor={C.muted}
+              placeholderTextColor={T.dim}
             />
           </View>
           {validationError ? (
             <Text style={styles.errorText}>{validationError}</Text>
           ) : (
-            <Text style={styles.hintText}>
-              {username.length}/30 characters
-            </Text>
+            <Text style={styles.hintText}>{username.length}/30 characters</Text>
           )}
         </View>
 
-        {/* Save button */}
-        <TouchableOpacity
-          style={[styles.saveButton, (saving || !!validationError) && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={saving || !!validationError}
-          activeOpacity={0.8}
-        >
-          {saving ? (
-            <ActivityIndicator color={C.text} />
-          ) : (
-            <Text style={styles.saveLabel}>Let's go</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+        {/* Favorite Genres */}
+        <View style={styles.field}>
+          <Text style={styles.fieldLabel}>Favorite Genres</Text>
+          <View style={styles.genreGrid}>
+            {GENRES.map((genre) => {
+              const selected = selectedGenres.includes(genre);
+              return (
+                <TouchableOpacity
+                  key={genre}
+                  style={[styles.genreChip, selected && styles.genreChipActive]}
+                  onPress={() => toggleGenre(genre)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.genreLabel, selected && styles.genreLabelActive]}>
+                    {genre}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* Action buttons */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={[styles.saveBtn, (saving || !!validationError) && styles.btnDisabled]}
+            onPress={handleSave}
+            disabled={saving || !!validationError}
+            activeOpacity={0.85}
+          >
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveBtnLabel}>Let's go</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.skipBtn}
+            onPress={() => router.replace("/(tabs)")}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.skipLabel}>Skip for now</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: C.bg,
-  },
-  inner: {
-    flex: 1,
-    paddingHorizontal: 32,
-    justifyContent: "center",
-    gap: 32,
-  },
+  root: { flex: 1, backgroundColor: T.bg },
+
   header: {
-    gap: 8,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: C.text,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: C.muted,
-    lineHeight: 22,
-  },
-  avatarWrap: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
     alignItems: "center",
-    gap: 10,
   },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: T.text,
+    letterSpacing: -0.2,
+  },
+
+  scroll: { paddingHorizontal: 24, paddingTop: 32 },
+
+  avatarSection: { alignItems: "center", marginBottom: 32, gap: 8 },
+  avatarWrap: { position: "relative" },
   avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 3,
+    borderColor: T.border,
   },
-  avatarLetter: {
-    fontSize: 42,
-    fontWeight: "700",
-    color: "#fff",
+  avatarLetter: { fontSize: 44, fontWeight: "700", color: "#fff" },
+  editBadge: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: T.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: T.bg,
   },
-  shuffleHint: {
-    fontSize: 13,
-    color: C.muted,
-  },
-  inputSection: {
-    gap: 8,
-  },
+  uploadTitle: { fontSize: 20, fontWeight: "700", color: T.text, marginTop: 4 },
+  uploadSubtitle: { fontSize: 13, color: T.primary, opacity: 0.8 },
+
+  field: { marginBottom: 24, gap: 8 },
+  fieldLabel: { fontSize: 14, fontWeight: "600", color: T.muted, marginLeft: 4 },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: C.surface,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: C.border,
-    paddingHorizontal: 16,
-    height: 52,
-  },
-  inputWrapFocused: {
-    borderColor: C.borderFocus,
-  },
-  at: {
-    fontSize: 17,
-    color: C.muted,
-    marginRight: 4,
-  },
-  input: {
-    flex: 1,
-    fontSize: 17,
-    color: C.text,
-    paddingVertical: 0,
-  },
-  hintText: {
-    fontSize: 12,
-    color: C.muted,
-    paddingHorizontal: 4,
-  },
-  errorText: {
-    fontSize: 12,
-    color: C.error,
-    paddingHorizontal: 4,
-  },
-  saveButton: {
-    backgroundColor: C.accent,
+    backgroundColor: T.surface,
     borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: T.border,
+    height: 54,
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  inputWrapFocused: { borderColor: T.primary },
+  inputIcon: { flexShrink: 0 },
+  input: { flex: 1, fontSize: 17, color: T.text, paddingVertical: 0 },
+  errorText: { fontSize: 12, color: T.error, paddingHorizontal: 4 },
+  hintText: { fontSize: 12, color: T.dim, paddingHorizontal: 4 },
+
+  genreGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  genreChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: T.surface,
+    borderWidth: 1.5,
+    borderColor: T.border,
+  },
+  genreChipActive: {
+    backgroundColor: T.primary,
+    borderColor: T.primary,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  genreLabel: { fontSize: 14, fontWeight: "500", color: T.muted },
+  genreLabelActive: { color: "#fff", fontWeight: "600" },
+
+  actions: { gap: 12, marginTop: 8 },
+  saveBtn: {
     height: 56,
+    borderRadius: 14,
+    backgroundColor: T.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  btnDisabled: { opacity: 0.5 },
+  saveBtnLabel: { fontSize: 17, fontWeight: "700", color: "#fff" },
+  skipBtn: {
+    height: 56,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: T.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  saveButtonDisabled: {
-    opacity: 0.5,
-  },
-  saveLabel: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: C.text,
-  },
+  skipLabel: { fontSize: 16, fontWeight: "500", color: T.primary },
 });

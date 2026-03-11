@@ -1,8 +1,8 @@
-import { createAuthClient } from "better-auth/react";
 import { expoClient } from "@better-auth/expo/client";
 import { magicLinkClient } from "better-auth/client/plugins";
-import * as SecureStore from "expo-secure-store";
+import { createAuthClient } from "better-auth/react";
 import Constants from "expo-constants";
+import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
 export const BEARER_KEY = "muvi.bearer_token";
@@ -10,8 +10,8 @@ export const BEARER_KEY = "muvi.bearer_token";
 function getBaseUrl(): string {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
   if (__DEV__) {
-    if (Platform.OS === "web") return "http://localhost:3000";
-    const ip = Constants.expoConfig?.hostUri?.split(":")[0] ?? "localhost";
+    if (Platform.OS === "web") return "http://192.168.1.129:3000";
+    const ip = Constants.expoConfig?.hostUri?.split(":")[0] ?? "192.168.1.129";
     return `http://${ip}:3000`;
   }
   return "https://muvie.org";
@@ -36,7 +36,13 @@ export const authClient = createAuthClient({
   },
   plugins: [
     ...(Platform.OS !== "web"
-      ? [expoClient({ scheme: "muvie", storagePrefix: "muvie", storage: SecureStore })]
+      ? [
+          expoClient({
+            scheme: "muvie",
+            storagePrefix: "muvie",
+            storage: SecureStore,
+          }),
+        ]
       : []),
     magicLinkClient(),
   ],

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Muvie - Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#af25f4",
+                        "background-light": "#f7f5f8",
+                        "background-dark": "#1c1022",
+                    },
+                    fontFamily: {
+                        "display": ["Spline Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 antialiased">
+<div class="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+<!-- Blurred Background Cinematic Feel -->
+<div class="absolute inset-0 z-0 opacity-40">
+<div class="absolute inset-0 bg-gradient-to-b from-background-dark/80 via-background-dark/60 to-background-dark"></div>
+<div class="w-full h-full bg-cover bg-center filter blur-md" data-alt="Blurred cinematic movie theater seats and screen montage" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAf3XlRWKbfl44oyYYtqk2kn76TpliHrACFc38F2yRe3t-Ll_tNGxw-kk5xyorwQrhjJRTnH_2k5lETQWI_BV72anigDJ17qn44Oc46eOYeVMas_1jbalrW0Il_RpR9yJa_gvGjtNp9Mvb4GnK5IF29WJSGlhH4LVRnrcJpeqdvs_ZMU1Z5LHqjgqgoD-nAyMO2ktuFsr1WfxsV1tDHf__xviyzTkkngcUslVZ6jHzQkLbpEXCXktMBaaCqsfI7NcXtKjyhNmPc_Fs');">
+</div>
+</div>
+<!-- Content Container -->
+<div class="relative z-10 w-full max-w-md px-6 py-12 flex flex-col items-center">
+<!-- Logo Section -->
+<div class="mb-10 text-center">
+<div class="bg-primary/20 p-4 rounded-xl inline-flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary text-5xl">movie</span>
+</div>
+<h1 class="text-4xl font-bold tracking-tight text-slate-100 mb-2">Muvie</h1>
+<p class="text-slate-400 text-lg">Your personal cinema guide</p>
+</div>
+<!-- Login Form -->
+<div class="w-full space-y-4">
+<div class="space-y-2">
+<label class="block text-sm font-medium text-slate-300 ml-1">Email address</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xl">mail</span>
+<input class="w-full pl-12 pr-4 h-14 bg-white/5 border border-white/10 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-slate-100 placeholder:text-slate-500 transition-all outline-none" placeholder="name@example.com" type="email"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-medium text-slate-300 ml-1">Password</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xl">lock</span>
+<input class="w-full pl-12 pr-4 h-14 bg-white/5 border border-white/10 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary text-slate-100 placeholder:text-slate-500 transition-all outline-none" placeholder="••••••••" type="password"/>
+</div>
+</div>
+<div class="flex items-center justify-between text-sm px-1">
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="rounded border-white/10 bg-white/5 text-primary focus:ring-primary" type="checkbox"/>
+<span class="text-slate-400">Remember me</span>
+</label>
+<a class="text-primary hover:text-primary/80 transition-colors font-medium" href="#">Forgot password?</a>
+</div>
+<button class="w-full h-14 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/20 active:scale-[0.98]">
+                    Sign In
+                </button>
+</div>
+<!-- Divider -->
+<div class="relative w-full my-8">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-white/10"></div>
+</div>
+<div class="relative flex justify-center text-xs uppercase">
+<span class="bg-background-dark px-2 text-slate-500">Or continue with</span>
+</div>
+</div>
+<!-- Social Logins -->
+<div class="grid grid-cols-2 gap-4 w-full">
+<button class="flex items-center justify-center gap-3 h-14 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all active:scale-[0.98]">
+<svg class="w-5 h-5" viewbox="0 0 24 24">
+<path d="M12.48 10.92v3.28h7.84c-.24 1.84-.90 3.15-1.91 4.15-1.21 1.21-3.1 2.52-6.4 2.52-5.18 0-9.42-4.18-9.42-9.37 0-5.2 4.24-9.38 9.42-9.38 2.8 0 4.88 1.1 6.3 2.45l2.31-2.31C18.42 1.4 15.65 0 12.48 0 6.83 0 2.22 4.6 2.22 10.25s4.61 10.25 10.26 10.25c3.08 0 5.4-1.02 7.23-2.91 1.9-1.9 2.51-4.57 2.51-6.67 0-.64-.05-1.25-.15-1.85h-9.59z" fill="#EA4335"></path>
+</svg>
+<span class="text-slate-200 font-medium">Google</span>
+</button>
+<button class="flex items-center justify-center gap-3 h-14 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-all active:scale-[0.98]">
+<svg class="w-5 h-5 fill-white" viewbox="0 0 24 24">
+<path d="M17.05 20.28c-.96.95-2.06 1.92-3.37 1.92-1.27 0-1.7-.78-3.18-.78-1.47 0-1.95.76-3.18.78-1.27.02-2.52-1.12-3.48-2.07C2.1 18.2 1 15.13 1 12.18c0-4.63 2.97-7.07 5.83-7.07 1.5 0 2.7.92 3.58.92.86 0 2.15-1 3.8-1 1.37 0 5.17.48 6.55 3.32-3.23 1.5-2.73 5.9.45 7.15-1.05 2.57-2.32 3.83-4.16 4.78zM14.7 1.2c0 2.1-1.73 3.84-3.8 3.84-.03-2.4 1.87-4.15 3.8-4.04z"></path>
+</svg>
+<span class="text-slate-200 font-medium">Apple</span>
+</button>
+</div>
+<!-- Footer Link -->
+<p class="mt-10 text-center text-slate-400">
+                Don't have an account? 
+                <a class="text-primary font-bold hover:underline" href="#">Sign up for free</a>
+</p>
+</div>
+<!-- Bottom Tab Bar Style Spacer (Modern Mobile Feel) -->
+<div class="fixed bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-background-dark to-transparent pointer-events-none"></div>
+</div>
+</body></html>

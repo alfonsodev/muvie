@@ -1,5 +1,7 @@
 import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
+import { T } from "@/lib/theme";
 import { avatarColorFromSeed } from "@/lib/username";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
@@ -13,16 +15,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const C = {
-  bg: "#212121",
-  surface: "#2f2f2f",
-  border: "#3d3d3d",
-  text: "#ececec",
-  muted: "#8e8ea0",
-  accent: "#6c63ff",
-  danger: "#ff6b6b",
-};
 
 type UserProfile = {
   empty?: boolean;
@@ -99,7 +91,7 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Avatar + username */}
+        {/* Avatar section */}
         <View style={styles.avatarSection}>
           <View style={[styles.avatar, { backgroundColor: avatarColor }]}>
             <Text style={styles.avatarLetter}>{avatarLetter}</Text>
@@ -114,37 +106,33 @@ export default function ProfileScreen() {
 
           {loading ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator color={C.muted} />
+              <ActivityIndicator color={T.primary} />
             </View>
           ) : !hasPrefs ? (
             <View style={styles.emptyPrefs}>
               <Text style={styles.emptyPrefsText}>
-                No preferences saved yet.{"\n"}Chat with Muvi and it will learn your taste automatically.
+                No preferences saved yet.{"\n"}Chat with Muvie and it will learn your taste automatically.
               </Text>
             </View>
           ) : (
             <View style={styles.prefsList}>
               {profile?.display_name && (
-                <PrefRow icon="👤" label="Name" value={profile.display_name} />
+                <PrefRow icon="person-outline" label="Name" value={profile.display_name} />
               )}
               {profile?.age && (
-                <PrefRow icon="🎂" label="Age" value={String(profile.age)} />
+                <PrefRow icon="calendar-outline" label="Age" value={String(profile.age)} />
               )}
               {profile?.country && (
-                <PrefRow icon="📍" label="Country" value={profile.country} />
+                <PrefRow icon="location-outline" label="Country" value={profile.country} />
               )}
               {profile?.language && (
-                <PrefRow icon="🗣️" label="Language" value={profile.language.toUpperCase()} />
+                <PrefRow icon="language-outline" label="Language" value={profile.language.toUpperCase()} />
               )}
               {profile?.platforms && profile.platforms.length > 0 && (
-                <PrefRow
-                  icon="📺"
-                  label="Platforms"
-                  value={profile.platforms.join(", ")}
-                />
+                <PrefRow icon="tv-outline" label="Platforms" value={profile.platforms.join(", ")} />
               )}
               {profile?.favorite_movie && (
-                <PrefRow icon="🎬" label="Favorite" value={profile.favorite_movie} />
+                <PrefRow icon="film-outline" label="Favorite" value={profile.favorite_movie} />
               )}
             </View>
           )}
@@ -152,6 +140,7 @@ export default function ProfileScreen() {
 
         {/* Sign out */}
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} activeOpacity={0.7}>
+          <Ionicons name="log-out-outline" size={18} color={T.danger} />
           <Text style={styles.signOutLabel}>Sign out</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -159,10 +148,12 @@ export default function ProfileScreen() {
   );
 }
 
-function PrefRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+function PrefRow({ icon, label, value }: { icon: keyof typeof Ionicons.glyphMap; label: string; value: string }) {
   return (
     <View style={styles.prefRow}>
-      <Text style={styles.prefIcon}>{icon}</Text>
+      <View style={styles.prefIconWrap}>
+        <Ionicons name={icon} size={18} color={T.primary} />
+      </View>
       <View style={styles.prefContent}>
         <Text style={styles.prefLabel}>{label}</Text>
         <Text style={styles.prefValue}>{value}</Text>
@@ -172,27 +163,24 @@ function PrefRow({ icon, label, value }: { icon: string; label: string; value: s
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.bg },
+  root: { flex: 1, backgroundColor: T.bg },
 
   header: {
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: C.border,
+    borderBottomWidth: 1,
+    borderBottomColor: T.border,
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
-    color: C.text,
-    letterSpacing: 0.3,
-    textAlign: "center",
+    fontWeight: "700",
+    color: T.text,
+    letterSpacing: -0.2,
   },
 
-  scroll: {
-    paddingBottom: 48,
-  },
+  scroll: { paddingBottom: 48 },
 
-  // Avatar section
   avatarSection: {
     alignItems: "center",
     paddingTop: 36,
@@ -200,106 +188,80 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 92,
+    height: 92,
+    borderRadius: 46,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
+    borderWidth: 3,
+    borderColor: T.border,
   },
-  avatarLetter: {
-    fontSize: 38,
-    fontWeight: "700",
-    color: "#fff",
-  },
+  avatarLetter: { fontSize: 40, fontWeight: "700", color: "#fff" },
   username: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
-    color: C.text,
+    color: T.text,
     letterSpacing: -0.3,
   },
-  email: {
-    fontSize: 14,
-    color: C.muted,
-  },
+  email: { fontSize: 14, color: T.muted },
 
-  // Preferences section
   section: {
     marginHorizontal: 16,
-    backgroundColor: C.surface,
+    backgroundColor: T.surface,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: C.border,
+    borderColor: T.border,
     overflow: "hidden",
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: C.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    color: T.dim,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
+    letterSpacing: 1,
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 10,
   },
-  loadingWrap: {
-    paddingVertical: 24,
-    alignItems: "center",
-  },
-  emptyPrefs: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
-  emptyPrefsText: {
-    color: C.muted,
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  prefsList: {
-    paddingBottom: 8,
-  },
+  loadingWrap: { paddingVertical: 24, alignItems: "center" },
+  emptyPrefs: { paddingHorizontal: 16, paddingBottom: 20 },
+  emptyPrefsText: { color: T.muted, fontSize: 14, lineHeight: 22 },
+  prefsList: { paddingBottom: 8 },
   prefRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: C.border,
+    paddingVertical: 13,
+    borderTopWidth: 1,
+    borderTopColor: T.border,
     gap: 12,
   },
-  prefIcon: {
-    fontSize: 20,
-    width: 28,
-    textAlign: "center",
-  },
-  prefContent: {
-    flex: 1,
-  },
-  prefLabel: {
-    fontSize: 12,
-    color: C.muted,
-    marginBottom: 2,
-  },
-  prefValue: {
-    fontSize: 15,
-    color: C.text,
-    fontWeight: "500",
-  },
-
-  // Sign out
-  signOutBtn: {
-    marginHorizontal: 16,
+  prefIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: T.surface,
     borderWidth: 1,
-    borderColor: C.danger + "55",
-    borderRadius: 14,
-    height: 52,
+    borderColor: T.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  signOutLabel: {
-    color: C.danger,
-    fontSize: 15,
-    fontWeight: "600",
+  prefContent: { flex: 1 },
+  prefLabel: { fontSize: 12, color: T.dim, marginBottom: 2 },
+  prefValue: { fontSize: 15, color: T.text, fontWeight: "500" },
+
+  signOutBtn: {
+    marginHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: `${T.danger}44`,
+    borderRadius: 14,
+    height: 54,
   },
+  signOutLabel: { color: T.danger, fontSize: 15, fontWeight: "600" },
 });

@@ -4,6 +4,7 @@ const ALLOWED_ORIGINS = [
   "https://muvie.org",
   "http://localhost:3000",
   "http://localhost:8081",
+  "http://192.168.1.129:3000",
 ];
 
 const ORIGIN_PATTERN = /^(exp:\/\/|http:\/\/192\.168\.|http:\/\/10\.)/;
@@ -29,7 +30,9 @@ export function middleware(req: NextRequest) {
 
   const res = NextResponse.next();
   if (allowOrigin) {
-    Object.entries(corsHeaders(allowOrigin)).forEach(([k, v]) => res.headers.set(k, v));
+    Object.entries(corsHeaders(allowOrigin)).forEach(([k, v]) =>
+      res.headers.set(k, v),
+    );
   }
   return res;
 }

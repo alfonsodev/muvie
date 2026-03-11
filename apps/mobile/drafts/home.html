@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary": "#af25f4",
+                "background-light": "#f7f5f8",
+                "background-dark": "#1c1022",
+              },
+              fontFamily: {
+                "display": ["Spline Sans"]
+              },
+              borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+            },
+          },
+        }
+    </script>
+<title>Muvie - AI Recommendations</title>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+<!-- Header Navigation -->
+<header class="sticky top-0 z-50 flex items-center bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md p-4 justify-between border-b border-primary/10">
+<div class="flex size-10 shrink-0 items-center">
+<div class="bg-primary/20 flex items-center justify-center rounded-full size-10">
+<span class="material-symbols-outlined text-primary">movie</span>
+</div>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-xl font-bold leading-tight tracking-tight flex-1 ml-3">Muvie</h2>
+<div class="flex gap-2">
+<button class="flex size-10 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="flex size-10 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-primary">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto pb-24">
+<!-- Hero Section: AI Recommendation -->
+<section class="px-4 pt-6">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-xl">magic_button</span>
+<h2 class="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">Ask Muvie</h2>
+</div>
+<p class="text-slate-600 dark:text-slate-400 text-sm font-normal mb-4">Based on your streaming history in France</p>
+<!-- Quick Filters -->
+<div class="flex gap-3 overflow-x-auto no-scrollbar pb-2">
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-primary text-white px-4 font-medium shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-sm">family_restroom</span>
+<span class="text-sm">Movie for family</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-primary/10 dark:bg-primary/20 text-slate-900 dark:text-slate-100 px-4 font-medium border border-primary/10">
+<span class="material-symbols-outlined text-sm">rocket_launch</span>
+<span class="text-sm">Best Sci-Fi</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 rounded-xl bg-primary/10 dark:bg-primary/20 text-slate-900 dark:text-slate-100 px-4 font-medium border border-primary/10">
+<span class="material-symbols-outlined text-sm">favorite</span>
+<span class="text-sm">Date night</span>
+</button>
+</div>
+</section>
+<!-- Main Featured Recommendation (Selected) -->
+<section class="mt-6 px-4">
+<div class="relative w-full aspect-[4/5] rounded-xl overflow-hidden shadow-2xl group">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Cinematic movie poster for a sci-fi epic" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA6FUgwhCBIZ8ZARguQtAxonbAtsQLLTzSU7PWw8_QYk5yVEWMvGpAZuIT8-ZAKIGydxHhoMU2IfEKGzxNj84ZmtYdrJMrGMRI7viMlz3angi5jkK5JYALHJvhBtvWWGoPOcYxzemRVAbLfeLHwOmPfTIUlC8jgu4zd4x5PH71_NoZUH0tECIevcR_tqe0m4sNXRMGJZQnnT8enXtT_JpHIyhh-Y2qwsBLqSv2GWIowl0vKTE1em0Els6cXTElgyzzgKKjduq6dGJY')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/20 to-transparent"></div>
+<!-- Movie Details Overlay -->
+<div class="absolute bottom-0 left-0 right-0 p-6 flex flex-col gap-3">
+<div class="flex flex-wrap gap-2">
+<span class="bg-primary px-2 py-1 rounded text-[10px] font-bold text-white uppercase tracking-wider">Trending</span>
+<span class="bg-slate-800/80 backdrop-blur px-2 py-1 rounded text-[10px] font-bold text-slate-100 uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] text-yellow-400">star</span> 8.9
+                        </span>
+<span class="bg-slate-800/80 backdrop-blur px-2 py-1 rounded text-[10px] font-bold text-slate-100 uppercase tracking-wider">PG-13</span>
+</div>
+<h3 class="text-3xl font-bold text-white leading-none">Interstellar Voyage</h3>
+<div class="flex items-center gap-3 text-slate-300 text-sm">
+<span>2h 45m</span>
+<span class="size-1 bg-slate-500 rounded-full"></span>
+<span>Sci-Fi &amp; Adventure</span>
+</div>
+<p class="text-slate-300 text-sm line-clamp-2 leading-relaxed">
+                        A team of explorers travel beyond this galaxy to discover whether mankind has a future among the stars.
+                    </p>
+<div class="flex gap-3 mt-2">
+<button class="flex-1 bg-primary hover:bg-primary/90 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined">play_arrow</span> Play Now
+                        </button>
+<button class="w-12 bg-white/10 hover:bg-white/20 backdrop-blur text-white rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- More AI Picks -->
+<section class="mt-8">
+<div class="px-4 flex justify-between items-end mb-4">
+<h3 class="text-lg font-bold">More for you</h3>
+<a class="text-primary text-sm font-medium" href="#">See all</a>
+</div>
+<div class="flex gap-4 overflow-x-auto no-scrollbar px-4">
+<!-- Mini Card 1 -->
+<div class="flex-none w-32 group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 ring-2 ring-transparent group-hover:ring-primary transition-all">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Action movie poster with dark moody colors" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBf9zQhYMNhPjBcMqLxWxVgjlucb_EKfQ-AIbfQkCibkEAlsFQOluTfwoTIiIplKyMktZZI9l0YSIrbhZxIlc5DndBIVDVQBRPCq2F4x6dXB6cUpvjiUtlsKRd8K-tkx2GcOqcirkrpRY8aC1LfbNvsAuff8Pz_xGhR63yxgGZmkJfO2jiiVcXZbCnYJhAtOiEqKOH5CJJh0dBw0SpRx_-pDVAziQdGGVN6OYQVr2Clno-v_uhUseD8H1aEKGEJf1zIABBLVaKjL60')"></div>
+<div class="absolute top-1 right-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white">4.5</div>
+</div>
+<p class="text-xs font-semibold truncate">Shadow Protocol</p>
+<p class="text-[10px] text-slate-500">Action • 2h 10m</p>
+</div>
+<!-- Mini Card 2 -->
+<div class="flex-none w-32 group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 ring-2 ring-transparent group-hover:ring-primary transition-all">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Bright cinematic landscape poster" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA56Jeeijcz_j95xC2ZTHRf_GXnzCqdYW1oYbIHvsL3zRXCWHdImMYmnp65hzP2GtC9V8R2gXxIbcM682Cmytx8Bv0rrCOgvWuB-agGGDN1JVxH0zo8VReZeS65wvO3tcaSgpvz5gqV7H48wcBrreIR6lJlczxbcVNU_nkSCr4mzLDMb8dVFefPKDWr8WOiJsmOZLKAVvON4mrwjiTLaN24eUQt4GjBeYnRlFzSydWruJSFqpWKVR_7BeaM5hk85X6wUDqwLLR5TTw')"></div>
+<div class="absolute top-1 right-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white">4.2</div>
+</div>
+<p class="text-xs font-semibold truncate">The Last Frontier</p>
+<p class="text-[10px] text-slate-500">Documentary • 1h 45m</p>
+</div>
+<!-- Mini Card 3 -->
+<div class="flex-none w-32 group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 ring-2 ring-transparent group-hover:ring-primary transition-all">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Animation style colorful movie poster" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD7acoB9FdDk7yxctzxFF0uFSpp3qCHKj8gNe4SWywiw8fsNymxf94nuRRpejoM8lWT0V6ThlyNThvgHQNJmlxpQKFLYo87pWfIm0vDauPcOmhiWaZCT9e6k8ka5A66InouTMe-c_tcp9Ycy_HO18MxmQ9KNOuh4vh4xr9j3PJflcJIU0orSvAJuJHPSIEWG8AooanUjK9UTc2EPeqpWzw4Ifn7GJB787mHmwBkQxLnJWq7dDC8n-wDDGVET5zydU8-gwI-Mrm_eVs')"></div>
+<div class="absolute top-1 right-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white">4.8</div>
+</div>
+<p class="text-xs font-semibold truncate">Cyber Runner</p>
+<p class="text-[10px] text-slate-500">Animation • 1h 30m</p>
+</div>
+<!-- Mini Card 4 -->
+<div class="flex-none w-32 group cursor-pointer">
+<div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-2 ring-2 ring-transparent group-hover:ring-primary transition-all">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Drama movie poster with emotional portrait" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA-N2kTxw82fSKik-RWFMAtNTMibh6mEb2mllNNkZIwVY8EeazaN6bReqt3STGcDwafb6aJcB1K5zdQvswDnTyLeOGxAV96sQ4iXl94eaml5s4WOxM8p1WNlmMaYAEujWMiIbx44MvYfI0Bpm2TvSoDXzk2Hn-GKl7FXm1W7kH4KlKdhVa1ddTP-mrrz0YYP3C2FSSU8YfCm33QoqLv94hjWhdF-PvojwkoDdASn4WHO8XCGLg98uv0Gd6JeKZY0ANcT9J8KUK2ydc')"></div>
+<div class="absolute top-1 right-1 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] font-bold text-white">4.9</div>
+</div>
+<p class="text-xs font-semibold truncate">Echoes of Silence</p>
+<p class="text-[10px] text-slate-500">Drama • 2h 05m</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full bg-background-light dark:bg-background-dark border-t border-primary/10 px-4 pb-6 pt-2 flex justify-between items-center z-50">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined fill-1">home</span>
+<p class="text-[10px] font-bold uppercase tracking-widest">Home</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined">explore</span>
+<p class="text-[10px] font-medium uppercase tracking-widest">Explore</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined">bookmarks</span>
+<p class="text-[10px] font-medium uppercase tracking-widest">My List</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500 dark:text-slate-400" href="#">
+<span class="material-symbols-outlined">person</span>
+<p class="text-[10px] font-medium uppercase tracking-widest">Profile</p>
+</a>
+</nav>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .fill-1 {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</body></html>
