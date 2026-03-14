@@ -1,8 +1,11 @@
+import { BASE_URL } from "@/lib/auth-client";
 import { T } from "@/lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React, { useState } from "react";
+import { getLocales } from "expo-localization";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,57 +15,54 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-type Movie = {
+const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
+
+type ExploreItem = {
   id: number;
   title: string;
+  mediaType: string;
+  posterPath: string | null;
+  rating: number | null;
   genre: string;
-  year?: string;
-  rating?: number;
-  badge?: string;
-  description?: string;
-  poster: string;
+  year: string;
+  overview: string | null;
+  badge: string | null;
 };
 
-// Placeholder posters use a gradient color block until real data is wired up
-const PLACEHOLDER = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+type ExploreData = {
+  top10: ExploreItem[];
+  trending: ExploreItem[];
+  popular: ExploreItem[];
+};
 
-const TOP10: Movie[] = [
-  { id: 1, title: "Shadow Protocol", genre: "Action • 2024", rating: 8.9, poster: PLACEHOLDER },
-  { id: 2, title: "Interstellar Voyage", genre: "Sci-Fi • 2024", rating: 9.1, poster: PLACEHOLDER },
-  { id: 3, title: "Wild Horizon", genre: "Documentary • 2024", rating: 8.4, poster: PLACEHOLDER },
-];
-
-const TRENDING: Movie[] = [
-  { id: 4, title: "Galactic Wars", genre: "Action • Sci-Fi", poster: PLACEHOLDER },
-  { id: 5, title: "Forest Spirit", genre: "Animation • Adventure", poster: PLACEHOLDER },
-  { id: 6, title: "The Avenger", genre: "Action • Hero", poster: PLACEHOLDER },
-];
-
-const POPULAR: Movie[] = [
-  {
-    id: 7,
-    title: "Shadows of the Night",
-    genre: "Thriller",
-    year: "2024",
-    rating: 8.9,
-    badge: "Featured",
-    description: "A mysterious entity haunts a small town in this gripping thriller.",
-    poster: PLACEHOLDER,
-  },
-  {
-    id: 8,
-    title: "Beyond The Stars",
-    genre: "Drama",
-    year: "2024",
-    rating: 9.2,
-    badge: "Trending",
-    description: "The human race faces its ultimate challenge in deep space exploration.",
-    poster: PLACEHOLDER,
-  },
-];
+function posterUrl(path: string | null): string | null {
+  return path ? `${TMDB_IMG}${path}` : null;
+}
 
 export default function ExploreScreen() {
   const [query, setQuery] = useState("");
+  const [data, setData] = useState<ExploreData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const locale = getLocales()[0];
+    const country = locale?.regionCode ?? "US";
+    const language = `${locale?.languageCode ?? "en"}-${locale?.regionCode ?? "US"}`;
+
+    fetch(`${BASE_URL}/api/explore?country=${country}&language=${language}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.error) throw new Error(json.error);
+        setData(json);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const top10 = data?.top10 ?? [];
+  const trending = data?.trending ?? [];
+  const popular = data?.popular ?? [];
 
   return (
     <SafeAreaView style={styles.root}>
@@ -86,97 +86,124 @@ export default function ExploreScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.flex} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Top 10 */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Top 10 on Netflix</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
-            {TOP10.map((movie, i) => (
-              <View key={movie.id} style={styles.rankCard}>
-                <View style={styles.rankPoster}>
-                  <Image source={movie.poster} style={styles.rankPosterImg} contentFit="cover" tintColor="#2d1640" />
-                  {movie.rating && (
-                    <View style={styles.ratingBadge}>
-                      <Ionicons name="star" size={9} color={T.star} />
-                      <Text style={styles.ratingBadgeText}>{movie.rating}</Text>
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={T.primary} size="large" />
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.flex} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Top 10 */}
+          {top10.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Top 10 Movies</Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAll}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+                {top10.map((movie, i) => (
+                  <View key={movie.id} style={styles.rankCard}>
+                    <View style={styles.rankPoster}>
+                      <Image
+                        source={posterUrl(movie.posterPath)}
+                        style={styles.rankPosterImg}
+                        contentFit="cover"
+                      />
+                      {movie.rating != null && (
+                        <View style={styles.ratingBadge}>
+                          <Ionicons name="star" size={9} color={T.star} />
+                          <Text style={styles.ratingBadgeText}>{movie.rating}</Text>
+                        </View>
+                      )}
                     </View>
-                  )}
-                </View>
-                <Text style={styles.rankNumber}>{i + 1}</Text>
-                <Text style={styles.rankTitle} numberOfLines={1}>{movie.title}</Text>
-                <Text style={styles.rankGenre} numberOfLines={1}>{movie.genre}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Trending on Disney+ */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Trending on Disney+</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>See All</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
-            {TRENDING.map((movie) => (
-              <View key={movie.id} style={styles.trendCard}>
-                <View style={styles.trendPoster}>
-                  <Image source={movie.poster} style={styles.trendPosterImg} contentFit="cover" tintColor="#2d1640" />
-                </View>
-                <Text style={styles.trendTitle} numberOfLines={1}>{movie.title}</Text>
-                <Text style={styles.trendGenre} numberOfLines={1}>{movie.genre}</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Popular this week */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Popular this week</Text>
-          </View>
-          <View style={styles.popularList}>
-            {POPULAR.map((movie) => (
-              <TouchableOpacity key={movie.id} style={styles.popularCard} activeOpacity={0.8}>
-                <View style={styles.popularPoster}>
-                  <Image source={movie.poster} style={styles.popularPosterImg} contentFit="cover" tintColor="#2d1640" />
-                </View>
-                <View style={styles.popularInfo}>
-                  <View style={styles.popularMeta}>
-                    {movie.badge && (
-                      <View style={styles.featuredBadge}>
-                        <Text style={styles.featuredBadgeText}>{movie.badge}</Text>
-                      </View>
-                    )}
-                    {movie.rating && (
-                      <View style={styles.starRow}>
-                        <Ionicons name="star" size={11} color={T.star} />
-                        <Text style={styles.starText}>{movie.rating}</Text>
-                      </View>
-                    )}
+                    <Text style={styles.rankNumber}>{i + 1}</Text>
+                    <Text style={styles.rankTitle} numberOfLines={1}>{movie.title}</Text>
+                    <Text style={styles.rankGenre} numberOfLines={1}>{movie.genre}</Text>
                   </View>
-                  <Text style={styles.popularTitle}>{movie.title}</Text>
-                  {movie.description && (
-                    <Text style={styles.popularDesc} numberOfLines={2}>{movie.description}</Text>
-                  )}
-                  <View style={styles.tagRow}>
-                    {movie.genre && <View style={styles.tag}><Text style={styles.tagText}>{movie.genre}</Text></View>}
-                    {movie.year && <View style={styles.tag}><Text style={styles.tagText}>{movie.year}</Text></View>}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
-        <View style={{ height: 20 }} />
-      </ScrollView>
+          {/* Trending */}
+          {trending.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Trending This Week</Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAll}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+                {trending.map((movie) => (
+                  <View key={movie.id} style={styles.trendCard}>
+                    <View style={styles.trendPoster}>
+                      <Image
+                        source={posterUrl(movie.posterPath)}
+                        style={styles.trendPosterImg}
+                        contentFit="cover"
+                      />
+                    </View>
+                    <Text style={styles.trendTitle} numberOfLines={1}>{movie.title}</Text>
+                    <Text style={styles.trendGenre} numberOfLines={1}>{movie.genre}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Popular this week */}
+          {popular.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Popular This Week</Text>
+              </View>
+              <View style={styles.popularList}>
+                {popular.map((movie) => (
+                  <TouchableOpacity key={movie.id} style={styles.popularCard} activeOpacity={0.8}>
+                    <View style={styles.popularPoster}>
+                      <Image
+                        source={posterUrl(movie.posterPath)}
+                        style={styles.popularPosterImg}
+                        contentFit="cover"
+                      />
+                    </View>
+                    <View style={styles.popularInfo}>
+                      <View style={styles.popularMeta}>
+                        {movie.badge && (
+                          <View style={styles.featuredBadge}>
+                            <Text style={styles.featuredBadgeText}>{movie.badge}</Text>
+                          </View>
+                        )}
+                        {movie.rating != null && (
+                          <View style={styles.starRow}>
+                            <Ionicons name="star" size={11} color={T.star} />
+                            <Text style={styles.starText}>{movie.rating}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={styles.popularTitle}>{movie.title}</Text>
+                      {movie.overview && (
+                        <Text style={styles.popularDesc} numberOfLines={2}>{movie.overview}</Text>
+                      )}
+                      <View style={styles.tagRow}>
+                        {movie.genre && <View style={styles.tag}><Text style={styles.tagText}>{movie.genre}</Text></View>}
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          <View style={{ height: 20 }} />
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -185,6 +212,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: T.bg },
   flex: { flex: 1 },
   content: { paddingBottom: 24 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  errorText: { color: T.error, fontSize: 14, textAlign: "center", paddingHorizontal: 24 },
 
   // Header
   header: {

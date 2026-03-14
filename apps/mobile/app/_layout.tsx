@@ -39,6 +39,7 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="callback" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+        <Stack.Screen name="chat" options={{ presentation: "modal", headerShown: false }} />
       </Stack>
       {!isAuthenticated && <Redirect href="/(auth)/sign-in" />}
       {needsOnboarding && <Redirect href="/(auth)/onboarding" />}

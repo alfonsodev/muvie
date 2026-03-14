@@ -7,12 +7,28 @@ import { Platform } from "react-native";
 
 export const BEARER_KEY = "muvi.bearer_token";
 
+function getExpoHost(): string | null {
+  const configHost = Constants.expoConfig?.hostUri?.split(":")[0];
+  if (configHost) return configHost;
+
+  const expoGoHost = Constants.expoGoConfig?.debuggerHost?.split(":")[0];
+  if (expoGoHost) return expoGoHost;
+
+  const manifest2 = (Constants as unknown as { manifest2?: { extra?: { expoClient?: { hostUri?: string } } } }).manifest2;
+  const manifest2Host = manifest2?.extra?.expoClient?.hostUri?.split(":")[0];
+  if (manifest2Host) return manifest2Host;
+
+  return null;
+}
+
 function getBaseUrl(): string {
   if (process.env.EXPO_PUBLIC_API_URL) return process.env.EXPO_PUBLIC_API_URL;
   if (__DEV__) {
-    if (Platform.OS === "web") return "http://192.168.1.129:3000";
-    const ip = Constants.expoConfig?.hostUri?.split(":")[0] ?? "192.168.1.129";
-    return `http://${ip}:3000`;
+    if (Platform.OS === "web") return "http://localhost:3000";
+    const host = getExpoHost();
+    if (host) return `http://${host}:3000`;
+    if (Platform.OS === "android") return "http://10.0.2.2:3000";
+    return "http://localhost:3000";
   }
   return "https://muvie.org";
 }

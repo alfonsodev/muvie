@@ -160,7 +160,7 @@ export default function SignInScreen() {
     import("expo-secure-store").then(SS =>
       SS.getItemAsync(BEARER_KEY)
     ).then(token => setHasRegisteredPasskey(!!token));
-  }, []);
+  }, [passkeySupported]);
 
   async function handleSendLink() {
     const trimmed = email.trim().toLowerCase();
@@ -171,13 +171,22 @@ export default function SignInScreen() {
     setError(null);
     setStage("loading");
 
-    const { error: err } = await authClient.signIn.magicLink({
-      email: trimmed,
-      callbackURL: `${BASE_URL}/auth/app-callback`,
-    });
+    let err: { message?: string } | null = null;
+    try {
+      const result = await authClient.signIn.magicLink({
+        email: trimmed,
+        callbackURL: `${BASE_URL}/auth/app-callback`,
+      });
+      err = result.error;
+    } catch (e) {
+      err = e as { message?: string };
+    }
 
     if (err) {
-      setError(err.message ?? "Failed to send link");
+      const message = (err.message ?? "").toLowerCase().includes("fetch")
+        ? `Could not reach ${BASE_URL}. Start the API server or set EXPO_PUBLIC_API_URL.`
+        : (err.message ?? "Failed to send link");
+      setError(message);
       setStage("input");
     } else {
       setStage("sent");
@@ -237,7 +246,7 @@ export default function SignInScreen() {
             <Text style={styles.emailHighlight}>{email.trim().toLowerCase()}</Text>
           </Text>
           <Text style={[styles.subtitle, { marginTop: 8 }]}>
-            Tap the link in your email — this tab will close automatically once you're signed in.
+            Tap the link in your email — this tab will close automatically once you are signed in.
           </Text>
           <TouchableOpacity
             style={[styles.secondaryBtn, { marginTop: 32 }]}

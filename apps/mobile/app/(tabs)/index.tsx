@@ -1,230 +1,284 @@
-import { lang, t } from "@/i18n";
-import { BEARER_KEY } from "@/lib/auth-client";
+import { BASE_URL } from "@/lib/auth-client";
 import { T } from "@/lib/theme";
-import { generateAPIUrl } from "@/utils";
-import { useChat } from "@ai-sdk/react";
 import { Ionicons } from "@expo/vector-icons";
-import { DefaultChatTransport } from "ai";
+import { Image } from "expo-image";
 import { getLocales } from "expo-localization";
-import { fetch as expoFetch } from "expo/fetch";
-import * as SecureStore from "expo-secure-store";
-import React, { useEffect, useMemo, useRef } from "react";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
-import Markdown from "react-native-markdown-display";
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const country = getLocales()[0]?.regionCode ?? "US";
+const TMDB_IMG = "https://image.tmdb.org/t/p/w342";
 
-const SUGGESTIONS = [
-  { icon: "people-outline" as const, label: t.suggestions[0] ?? "Movie for family" },
-  { icon: "rocket-outline" as const, label: t.suggestions[1] ?? "Best Sci-Fi" },
-  { icon: "heart-outline" as const, label: t.suggestions[2] ?? "Date night" },
-  { icon: "film-outline" as const, label: t.suggestions[3] ?? "Award winners" },
-];
+type ExploreItem = {
+  id: number;
+  title: string;
+  mediaType: string;
+  posterPath: string | null;
+  rating: number | null;
+  genre: string;
+  year: string;
+  overview: string | null;
+  badge: string | null;
+};
 
-export default function HomeScreen() {
-  const [bearerToken, setBearerToken] = React.useState<string | null>(null);
+type ExploreData = {
+  top10: ExploreItem[];
+  trending: ExploreItem[];
+  popular: ExploreItem[];
+};
+
+function posterUrl(path: string | null): string | null {
+  return path ? `${TMDB_IMG}${path}` : null;
+}
+
+function AskMuvieFab({ onPress }: { onPress: () => void }) {
+  const scale = useSharedValue(1);
+  const glow = useSharedValue(0.5);
 
   useEffect(() => {
-    if (Platform.OS === "web") { setBearerToken(""); return; }
-    SecureStore.getItemAsync(BEARER_KEY).then((tk) => setBearerToken(tk ?? ""));
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.04, { duration: 1200, easing: Easing.inOut(Easing.sine) }),
+        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sine) })
+      ),
+      -1,
+      false
+    );
+    glow.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sine) }),
+        withTiming(0.5, { duration: 1200, easing: Easing.inOut(Easing.sine) })
+      ),
+      -1,
+      false
+    );
   }, []);
 
-  const transport = useMemo(
-    () =>
-      new DefaultChatTransport({
-        fetch: expoFetch as unknown as typeof globalThis.fetch,
-        api: generateAPIUrl("/api/chat"),
-        body: { locale: lang, country },
-        headers: bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {},
-      }),
-    [bearerToken]
+  const fabStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    shadowOpacity: glow.value * 0.6,
+  }));
+
+  return (
+    <Animated.View
+      entering={FadeInDown.delay(400).springify().damping(14)}
+      style={[styles.fab, fabStyle]}
+    >
+      <TouchableOpacity
+        style={styles.fabInner}
+        activeOpacity={0.85}
+        onPress={onPress}
+      >
+        <Ionicons name="sparkles" size={18} color="#fff" />
+        <Text style={styles.fabText}>Ask Muvie</Text>
+      </TouchableOpacity>
+    </Animated.View>
   );
+}
 
-  const { messages, status, sendMessage, error, setMessages } = useChat({ transport });
-
-  const scrollRef = useRef<ScrollView>(null);
-  const inputRef = useRef<TextInput>(null);
-  const [input, setInput] = React.useState("");
-
-  const isLoading = status === "submitted" || status === "streaming";
+export default function HomeScreen() {
+  const router = useRouter();
+  const [data, setData] = useState<ExploreData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
-    }
-  }, [messages]);
+    const locale = getLocales()[0];
+    const country = locale?.regionCode ?? "US";
+    const language = `${locale?.languageCode ?? "en"}-${locale?.regionCode ?? "US"}`;
 
-  const handleSend = () => {
-    const text = input.trim();
-    if (!text || isLoading) return;
-    setInput("");
-    sendMessage({ text });
-  };
+    fetch(`${BASE_URL}/api/explore?country=${country}&language=${language}`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.error) throw new Error(json.error);
+        setData(json);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
-  const handleSuggestion = (text: string) => {
-    sendMessage({ text });
-  };
-
-  const canSend = input.trim().length > 0 && !isLoading;
+  const top10 = data?.top10 ?? [];
+  const trending = data?.trending ?? [];
+  const popular = data?.popular ?? [];
 
   return (
     <SafeAreaView style={styles.root}>
       {/* Header */}
-      <View style={styles.header}>
+      <Animated.View entering={FadeIn.duration(400)} style={styles.header}>
         <View style={styles.headerLeft}>
           <View style={styles.logoIcon}>
             <Ionicons name="film-outline" size={20} color={T.primary} />
           </View>
           <Text style={styles.headerTitle}>Muvie</Text>
         </View>
-        <Pressable style={styles.headerAction} onPress={() => setMessages([])}>
-          <Ionicons name="create-outline" size={22} color={T.text} />
-        </Pressable>
-      </View>
-
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={0}
-      >
-        <ScrollView
-          ref={scrollRef}
-          style={styles.flex}
-          contentContainerStyle={styles.listContent}
-          keyboardDismissMode="interactive"
-        >
-          {messages.length === 0 ? (
-            <EmptyState onSuggestion={handleSuggestion} />
-          ) : (
-            <>
-              {messages.map((msg) => (
-                <MessageRow key={msg.id} message={msg} />
-              ))}
-              {isLoading && messages[messages.length - 1]?.role === "user" && (
-                <TypingIndicator />
-              )}
-            </>
-          )}
-          {error && (
-            <View style={styles.errorBanner}>
-              <Text style={styles.errorText}>{t.errorMessage}</Text>
-            </View>
-          )}
-        </ScrollView>
-
-        {/* Input */}
-        <View style={styles.inputArea}>
-          <View style={styles.inputRow}>
-            <TextInput
-              ref={inputRef}
-              style={styles.input}
-              value={input}
-              onChangeText={setInput}
-              placeholder={t.inputPlaceholder}
-              placeholderTextColor={T.dim}
-              multiline
-              maxLength={4000}
-              onSubmitEditing={handleSend}
-              returnKeyType="send"
-            />
-            <Pressable
-              style={[styles.sendBtn, canSend ? styles.sendBtnActive : styles.sendBtnInactive]}
-              onPress={handleSend}
-              disabled={!canSend}
-            >
-              <Ionicons name="arrow-up" size={18} color={canSend ? "#fff" : T.dim} />
-            </Pressable>
-          </View>
-          <Text style={styles.disclaimer}>{t.disclaimer}</Text>
+        <View style={styles.bellBtn}>
+          <Ionicons name="notifications-outline" size={22} color={T.primary} />
         </View>
-      </KeyboardAvoidingView>
+      </Animated.View>
+
+      {loading ? (
+        <View style={styles.center}>
+          <ActivityIndicator color={T.primary} size="large" />
+        </View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.flex} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Top 10 */}
+          {top10.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Top 10 Movies</Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAll}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+                {top10.map((movie, i) => (
+                  <Animated.View
+                    key={movie.id}
+                    entering={FadeInDown.delay(120 + i * 60).duration(400)}
+                    style={styles.rankCard}
+                  >
+                    <View style={styles.rankPoster}>
+                      <Image
+                        source={posterUrl(movie.posterPath)}
+                        style={styles.rankPosterImg}
+                        contentFit="cover"
+                      />
+                      {movie.rating != null && (
+                        <View style={styles.ratingBadge}>
+                          <Ionicons name="star" size={9} color={T.star} />
+                          <Text style={styles.ratingBadgeText}>{movie.rating}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.rankNumber}>{i + 1}</Text>
+                    <Text style={styles.rankTitle} numberOfLines={1}>{movie.title}</Text>
+                    <Text style={styles.rankGenre} numberOfLines={1}>{movie.genre}</Text>
+                  </Animated.View>
+                ))}
+              </ScrollView>
+            </Animated.View>
+          )}
+
+          {/* Trending */}
+          {trending.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(200).duration(500)} style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Trending This Week</Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAll}>See All</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+                {trending.map((movie, i) => (
+                  <Animated.View
+                    key={movie.id}
+                    entering={FadeInDown.delay(220 + i * 60).duration(400)}
+                    style={styles.trendCard}
+                  >
+                    <View style={styles.trendPoster}>
+                      <Image
+                        source={posterUrl(movie.posterPath)}
+                        style={styles.trendPosterImg}
+                        contentFit="cover"
+                      />
+                    </View>
+                    <Text style={styles.trendTitle} numberOfLines={1}>{movie.title}</Text>
+                    <Text style={styles.trendGenre} numberOfLines={1}>{movie.genre}</Text>
+                  </Animated.View>
+                ))}
+              </ScrollView>
+            </Animated.View>
+          )}
+
+          {/* Popular this week */}
+          {popular.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Popular This Week</Text>
+              </View>
+              <View style={styles.popularList}>
+                {popular.map((movie, i) => (
+                  <Animated.View
+                    key={movie.id}
+                    entering={FadeInDown.delay(320 + i * 80).duration(400)}
+                  >
+                    <TouchableOpacity style={styles.popularCard} activeOpacity={0.8}>
+                      <View style={styles.popularPoster}>
+                        <Image
+                          source={posterUrl(movie.posterPath)}
+                          style={styles.popularPosterImg}
+                          contentFit="cover"
+                        />
+                      </View>
+                      <View style={styles.popularInfo}>
+                        <View style={styles.popularMeta}>
+                          {movie.badge && (
+                            <View style={styles.featuredBadge}>
+                              <Text style={styles.featuredBadgeText}>{movie.badge}</Text>
+                            </View>
+                          )}
+                          {movie.rating != null && (
+                            <View style={styles.starRow}>
+                              <Ionicons name="star" size={11} color={T.star} />
+                              <Text style={styles.starText}>{movie.rating}</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.popularTitle}>{movie.title}</Text>
+                        {movie.overview && (
+                          <Text style={styles.popularDesc} numberOfLines={2}>{movie.overview}</Text>
+                        )}
+                        <View style={styles.tagRow}>
+                          {movie.genre && <View style={styles.tag}><Text style={styles.tagText}>{movie.genre}</Text></View>}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  </Animated.View>
+                ))}
+              </View>
+            </Animated.View>
+          )}
+
+          <View style={{ height: 100 }} />
+        </ScrollView>
+      )}
+
+      <AskMuvieFab onPress={() => router.push("/chat")} />
     </SafeAreaView>
   );
 }
 
-function EmptyState({ onSuggestion }: { onSuggestion: (text: string) => void }) {
-  return (
-    <View style={styles.empty}>
-      <View style={styles.askHeader}>
-        <Ionicons name="sparkles" size={22} color={T.primary} />
-        <Text style={styles.askTitle}>Ask Muvie</Text>
-      </View>
-      <Text style={styles.askSubtitle}>{t.emptyTitle}</Text>
-
-      {/* Suggestion chips */}
-      <View style={styles.chips}>
-        {SUGGESTIONS.map((s) => (
-          <Pressable
-            key={s.label}
-            style={styles.chip}
-            onPress={() => onSuggestion(s.label)}
-          >
-            <Ionicons name={s.icon} size={16} color={T.primary} />
-            <Text style={styles.chipText}>{s.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function MessageRow({ message }: { message: any }) {
-  const isUser = message.role === "user";
-
-  const text: string = message.parts
-    ? message.parts
-        .filter((p: { type: string }) => p.type === "text")
-        .map((p: { type: string; text: string }) => p.text)
-        .join("")
-    : (message.content ?? "");
-
-  return (
-    <View style={[styles.row, isUser ? styles.rowUser : styles.rowAssistant]}>
-      {!isUser && (
-        <View style={styles.avatar}>
-          <Ionicons name="film-outline" size={14} color={T.primary} />
-        </View>
-      )}
-      <View style={[styles.bubble, isUser ? styles.bubbleUser : styles.bubbleAssistant]}>
-        {isUser ? (
-          <Text style={styles.bubbleText}>{text}</Text>
-        ) : (
-          <Markdown style={markdownStyles}>{text}</Markdown>
-        )}
-      </View>
-    </View>
-  );
-}
-
-function TypingIndicator() {
-  return (
-    <View style={[styles.row, styles.rowAssistant]}>
-      <View style={styles.avatar}>
-        <Ionicons name="film-outline" size={14} color={T.primary} />
-      </View>
-      <View style={styles.typingBubble}>
-        <ActivityIndicator size="small" color={T.primary} />
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
   root: { flex: 1, backgroundColor: T.bg },
+  flex: { flex: 1 },
+  content: { paddingBottom: 24 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center" },
+  errorText: { color: T.error, fontSize: 14, textAlign: "center", paddingHorizontal: 24 },
 
+  // Header
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -234,11 +288,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: T.border,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
   logoIcon: {
     width: 36,
     height: 36,
@@ -255,199 +305,150 @@ const styles = StyleSheet.create({
     color: T.text,
     letterSpacing: -0.3,
   },
-  headerAction: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  bellBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: T.surface,
-    alignItems: "center",
-    justifyContent: "center",
     borderWidth: 1,
     borderColor: T.border,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 16,
-    flexGrow: 1,
+  // Sections
+  section: { marginTop: 28, paddingHorizontal: 16 },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
   },
+  sectionTitle: { fontSize: 19, fontWeight: "700", color: T.text },
+  seeAll: { fontSize: 14, fontWeight: "600", color: T.primary },
+  hScroll: { gap: 14, paddingRight: 4 },
 
-  // Empty state
-  empty: {
-    flex: 1,
-    paddingTop: 32,
-    paddingHorizontal: 4,
+  // Top 10 cards
+  rankCard: { width: 160 },
+  rankPoster: {
+    aspectRatio: 2 / 3,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.border,
+    marginBottom: 20,
   },
-  askHeader: {
+  rankPosterImg: { width: "100%", height: "100%" },
+  ratingBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+  },
+  ratingBadgeText: { fontSize: 11, fontWeight: "700", color: "#fff" },
+  rankNumber: {
+    position: "absolute",
+    bottom: 4,
+    left: -6,
+    fontSize: 72,
+    fontWeight: "900",
+    color: T.primary,
+    opacity: 0.85,
+    lineHeight: 72,
+  },
+  rankTitle: { fontSize: 13, fontWeight: "600", color: T.text, marginTop: 2 },
+  rankGenre: { fontSize: 11, color: T.muted, marginTop: 2 },
+
+  // Trending cards
+  trendCard: { width: 140 },
+  trendPoster: {
+    aspectRatio: 2 / 3,
+    borderRadius: 14,
+    overflow: "hidden",
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.border,
+    marginBottom: 8,
+  },
+  trendPosterImg: { width: "100%", height: "100%" },
+  trendTitle: { fontSize: 13, fontWeight: "600", color: T.text },
+  trendGenre: { fontSize: 11, color: T.muted, marginTop: 2 },
+
+  // Popular list
+  popularList: { gap: 12 },
+  popularCard: {
+    flexDirection: "row",
+    gap: 14,
+    backgroundColor: T.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: T.border,
+    padding: 12,
+  },
+  popularPoster: {
+    width: 90,
+    height: 120,
+    borderRadius: 10,
+    overflow: "hidden",
+    backgroundColor: "rgba(175,37,244,0.12)",
+    flexShrink: 0,
+  },
+  popularPosterImg: { width: "100%", height: "100%" },
+  popularInfo: { flex: 1, justifyContent: "center", gap: 6 },
+  popularMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
+  featuredBadge: {
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.border,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  featuredBadgeText: { fontSize: 10, fontWeight: "700", color: T.primary, textTransform: "uppercase" },
+  starRow: { flexDirection: "row", alignItems: "center", gap: 3 },
+  starText: { fontSize: 12, color: T.star, fontWeight: "600" },
+  popularTitle: { fontSize: 16, fontWeight: "700", color: T.text, lineHeight: 20 },
+  popularDesc: { fontSize: 13, color: T.muted, lineHeight: 18 },
+  tagRow: { flexDirection: "row", gap: 6, marginTop: 2 },
+  tag: {
+    backgroundColor: "rgba(255,255,255,0.07)",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  tagText: { fontSize: 11, color: T.muted },
+
+  // FAB
+  fab: {
+    position: "absolute",
+    bottom: 28,
+    alignSelf: "center",
+    borderRadius: 30,
+    backgroundColor: T.primary,
+    shadowColor: T.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  fabInner: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 6,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 30,
   },
-  askTitle: {
-    fontSize: 26,
+  fabText: {
+    fontSize: 16,
     fontWeight: "700",
-    color: T.text,
-    letterSpacing: -0.3,
-  },
-  askSubtitle: {
-    fontSize: 14,
-    color: T.muted,
-    marginBottom: 20,
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  chip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.border,
-  },
-  chipText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: T.text,
-  },
-
-  // Messages
-  row: {
-    flexDirection: "row",
-    marginBottom: 20,
-    alignItems: "flex-end",
-    gap: 10,
-  },
-  rowUser: { justifyContent: "flex-end" },
-  rowAssistant: { justifyContent: "flex-start" },
-
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: T.surface,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: T.border,
-    marginBottom: 2,
-  },
-
-  bubble: {
-    maxWidth: "78%",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  bubbleUser: {
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.border,
-    borderBottomRightRadius: 4,
-  },
-  bubbleAssistant: {
-    backgroundColor: "transparent",
-    paddingHorizontal: 0,
-    paddingVertical: 0,
-    maxWidth: "90%",
-  },
-  bubbleText: {
-    color: T.text,
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  typingBubble: {
-    paddingVertical: 8,
-    paddingLeft: 4,
-  },
-
-  // Error
-  errorBanner: {
-    backgroundColor: "rgba(239,68,68,0.15)",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "rgba(239,68,68,0.3)",
-  },
-  errorText: { color: T.error, fontSize: 14 },
-
-  // Input
-  inputArea: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: Platform.OS === "ios" ? 8 : 12,
-    borderTopWidth: 1,
-    borderTopColor: T.border,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    backgroundColor: T.surface,
-    borderRadius: 26,
-    borderWidth: 1,
-    borderColor: T.border,
-    paddingLeft: 16,
-    paddingRight: 6,
-    paddingVertical: 6,
-  },
-  input: {
-    flex: 1,
-    color: T.text,
-    fontSize: 16,
-    lineHeight: 22,
-    maxHeight: 120,
-    paddingTop: 6,
-    paddingBottom: 6,
-  },
-  sendBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-    marginLeft: 8,
-  },
-  sendBtnActive: {
-    backgroundColor: T.primary,
-    shadowColor: T.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  sendBtnInactive: { backgroundColor: T.surface },
-  disclaimer: {
-    color: T.dim,
-    fontSize: 12,
-    textAlign: "center",
-    marginTop: 8,
+    color: "#fff",
+    letterSpacing: 0.2,
   },
 });
-
-const markdownStyles = {
-  body: { color: T.text, fontSize: 16, lineHeight: 24 },
-  strong: { fontWeight: "700" as const, color: T.text },
-  em: { fontStyle: "italic" as const },
-  link: { color: T.primary },
-  bullet_list: { marginVertical: 4 },
-  ordered_list: { marginVertical: 4 },
-  list_item: { marginBottom: 4 },
-  paragraph: { marginTop: 0, marginBottom: 8 },
-  heading1: { color: T.text, fontSize: 20, fontWeight: "700" as const, marginBottom: 8 },
-  heading2: { color: T.text, fontSize: 18, fontWeight: "700" as const, marginBottom: 6 },
-  heading3: { color: T.text, fontSize: 16, fontWeight: "700" as const, marginBottom: 4 },
-  code_inline: {
-    backgroundColor: T.surface,
-    color: T.text,
-    borderRadius: 4,
-    paddingHorizontal: 4,
-  },
-};
