@@ -160,6 +160,8 @@ export default function SignInScreen() {
   const inputRef = useRef<TextInput>(null);
 
   const passkeySupported = isPasskeySupported();
+  const nativeCallbackURL = `${AppConfig.deepLinkScheme}://callback`;
+  const webCallbackURL = `${AppConfig.authBaseUrl}/auth/app-callback`;
 
   useEffect(() => {
     if (!passkeySupported || Platform.OS === "web") return;
@@ -181,7 +183,7 @@ export default function SignInScreen() {
     try {
       const result = await authClient.signIn.magicLink({
         email: trimmed,
-        callbackURL: `${AppConfig.authBaseUrl}/auth/app-callback`,
+        callbackURL: webCallbackURL,
       });
       err = result.error;
     } catch (e) {
@@ -203,12 +205,18 @@ export default function SignInScreen() {
     setGoogleLoading(true);
     setError(null);
     try {
-      await authClient.signIn.social({
+      const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: `${AppConfig.authBaseUrl}/auth/app-callback`,
+        callbackURL: Platform.OS === "web" ? webCallbackURL : nativeCallbackURL,
       });
+      const socialError = (result as { error?: { message?: string } })?.error;
+      if (socialError) {
+        throw new Error(socialError.message ?? "Google sign-in failed");
+      }
     } catch (err) {
-      setError((err as { message?: string })?.message ?? "Google sign-in failed");
+      const message = (err as { message?: string })?.message ?? "Google sign-in failed";
+      console.error("[auth] google sign-in error", err);
+      setError(message);
     } finally {
       setGoogleLoading(false);
     }

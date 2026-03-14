@@ -52,19 +52,22 @@ export default function ProfileScreen() {
   const avatarColor = avatarColorFromSeed(avatarSeed);
   const avatarLetter = (username ?? "?").charAt(0).toUpperCase();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const token = Platform.OS !== "web"
-        ? (await SecureStore.getItemAsync(BEARER_KEY)) ?? ""
-        : "";
-      const data = await fetchUserProfile(token);
-      setProfile(data);
-    } catch (e) {
-      console.error("[profile] load error", e);
-    } finally {
-      setLoading(false);
+  const load = useCallback(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const token = Platform.OS !== "web"
+          ? (await SecureStore.getItemAsync(BEARER_KEY)) ?? ""
+          : "";
+        const data = await fetchUserProfile(token);
+        setProfile(data);
+      } catch (e) {
+        console.error("[profile] load error", e);
+      } finally {
+        setLoading(false);
+      }
     }
+    fetchData();
   }, []);
 
   useFocusEffect(load);

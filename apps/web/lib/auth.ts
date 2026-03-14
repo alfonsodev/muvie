@@ -8,8 +8,45 @@ const resend = process.env.RESEND_API_KEY
   ? new Resend(process.env.RESEND_API_KEY)
   : null;
 
+function normalizeOriginCandidate(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.origin;
+    }
+    return value;
+  } catch {
+    return value;
+  }
+}
+
+const staticTrustedOrigins = [
+  "muvie://",
+  "muvie://callback",
+  "muvie://**",
+  "https://muvie.org",
+  ...(process.env.NODE_ENV === "development"
+    ? [
+        "https://dev.muvie.org:*",
+        "https://dev.muvie.org:*/**",
+        "exp://",
+        "exp://**",
+        "exp://192.168.*.*:*/**",
+        "http://192.168.*.*:*/**",
+        "http://localhost:*",
+        "http://localhost:*/**",
+      ]
+    : []),
+];
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
+  advanced: {
+    // Expo native dev requests can carry non-standard origins that fail strict checks.
+    // Keep origin validation enabled in production.
+    disableOriginCheck: process.env.NODE_ENV === "development",
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -17,20 +54,21 @@ export const auth = betterAuth({
     },
   },
   database: db,
-  trustedOrigins: [
-    "muvie://",
-    "https://muvie.org",
-    ...(process.env.NODE_ENV === "development"
-      ? [
-          "exp://",
-          "exp://**",
-          "exp://192.168.*.*:*/**",
-          "http://192.168.*.*:*/**",
-          "http://localhost:*",
-          "http://localhost:*/**",
-        ]
-      : []),
-  ],
+  trustedOrigins: async (request) => {
+    if (process.env.NODE_ENV !== "development" || !request?.headers) {
+      return staticTrustedOrigins;
+    }
+
+    const dynamic = new Set<string>(staticTrustedOrigins);
+    const incoming = [
+      normalizeOriginCandidate(request.headers.get("origin")),
+      normalizeOriginCandidate(request.headers.get("referer")),
+      normalizeOriginCandidate(request.headers.get("expo-origin")),
+    ].filter((v): v is string => !!v);
+
+    for (const origin of incoming) dynamic.add(origin);
+    return Array.from(dynamic);
+  },
   plugins: [
     expo(),
     bearer(),

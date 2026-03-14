@@ -79,18 +79,21 @@ export default function WatchlistScreen() {
   const [filter, setFilter] = useState<Filter>("all");
   const [token, setToken] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const t = (await SecureStore.getItemAsync(BEARER_KEY)) ?? "";
-      setToken(t);
-      const data = await fetchWatchlist(t);
-      setItems(data);
-    } catch (e) {
-      console.error("[watchlist] load error", e);
-    } finally {
-      setLoading(false);
+  const load = useCallback(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const t = (await SecureStore.getItemAsync(BEARER_KEY)) ?? "";
+        setToken(t);
+        const data = await fetchWatchlist(t);
+        setItems(data);
+      } catch (e) {
+        console.error("[watchlist] load error", e);
+      } finally {
+        setLoading(false);
+      }
     }
+    fetchData();
   }, []);
 
   useFocusEffect(load);

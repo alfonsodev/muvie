@@ -2,6 +2,7 @@ import { AppConfig } from "@/lib/config";
 import { T } from "@/lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { getLocales } from "expo-localization";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -61,27 +62,27 @@ function AskMuvieFab({ onPress }: { onPress: () => void }) {
     scale.value = withRepeat(
       withSequence(
         withTiming(1.04, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
-        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sin) })
+        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
-      false
+      false,
     );
     glow.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0.5, { duration: 1200, easing: Easing.inOut(Easing.sin) })
+        withTiming(0.5, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
-      false
+      false,
     );
     // bunny bobs slightly, offset from the pill pulse for a lively feel
     bunnyBob.value = withRepeat(
       withSequence(
         withTiming(-3, { duration: 900, easing: Easing.inOut(Easing.sin) }),
-        withTiming(0, { duration: 900, easing: Easing.inOut(Easing.sin) })
+        withTiming(0, { duration: 900, easing: Easing.inOut(Easing.sin) }),
       ),
       -1,
-      false
+      false,
     );
   }, [glow, scale, bunnyBob]);
 
@@ -94,20 +95,46 @@ function AskMuvieFab({ onPress }: { onPress: () => void }) {
     transform: [{ translateY: bunnyBob.value }],
   }));
 
-  return (
-    <Animated.View
-      entering={FadeInDown.delay(400).springify().damping(14)}
-      style={[styles.fab, fabStyle]}
-    >
-      <TouchableOpacity style={styles.fabInner} activeOpacity={0.85} onPress={onPress}>
-        <Text style={styles.fabText}>Ask Muvie</Text>
-      </TouchableOpacity>
+  // Two shadow-halo views that share the pill's shape and radiate blur outward
+  const glowWideStyle = useAnimatedStyle(() => ({
+    shadowOpacity: 0.55 + glow.value * 0.35,
+  }));
+  const glowTightStyle = useAnimatedStyle(() => ({
+    shadowOpacity: 0.4 + glow.value * 0.5,
+  }));
 
-      {/* Bunny overlaid — bottom-anchored so ears overflow above the pill */}
-      <Animated.Image
-        source={require("@/assets/images/muvie_head.png")}
-        style={[styles.fabBunny, bunnyStyle]}
-      />
+  return (
+    // Outer view handles entrance animation only (no transform)
+    <Animated.View entering={FadeInDown.delay(400).springify().damping(14)} style={styles.fabWrap}>
+      {/* Inner view handles continuous scale + shadow pulse (no entering) */}
+      <Animated.View style={fabStyle}>
+        {/* Glow halos: same border-radius as pill, solid bg hidden behind pill,
+            shadow bleeds outward as a blurred ring — wide diffuse + tight bright */}
+        <Animated.View style={[styles.glowHaloWide, glowWideStyle]} />
+        <Animated.View style={[styles.glowHaloTight, glowTightStyle]} />
+
+        {/* Gradient pill */}
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onPress}
+          style={styles.fabTouchable}
+        >
+          <LinearGradient
+            colors={["#d94fff", "#9b1fe8"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.fabGradient}
+          >
+            <Text style={styles.fabText}>Ask Muvie</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Bunny overlaid — bottom-anchored so ears overflow above the pill */}
+        <Animated.Image
+          source={require("@/assets/images/muvie_head.png")}
+          style={[styles.fabBunny, bunnyStyle]}
+        />
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -123,7 +150,9 @@ export default function HomeScreen() {
     const country = locale?.regionCode ?? "US";
     const language = `${locale?.languageCode ?? "en"}-${locale?.regionCode ?? "US"}`;
 
-    fetch(`${AppConfig.apiBaseUrl}/api/explore?country=${country}&language=${language}`)
+    fetch(
+      `${AppConfig.apiBaseUrl}/api/explore?country=${country}&language=${language}`,
+    )
       .then((r) => r.json())
       .then((json) => {
         if (json.error) throw new Error(json.error);
@@ -161,17 +190,28 @@ export default function HomeScreen() {
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : (
-        <ScrollView style={styles.flex} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Top 10 */}
           {top10.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.section}>
+            <Animated.View
+              entering={FadeInDown.delay(100).duration(500)}
+              style={styles.section}
+            >
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Top 10 Movies</Text>
                 <TouchableOpacity>
                   <Text style={styles.seeAll}>See All</Text>
                 </TouchableOpacity>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.hScroll}
+              >
                 {top10.map((movie, i) => (
                   <Animated.View
                     key={movie.id}
@@ -187,13 +227,19 @@ export default function HomeScreen() {
                       {movie.rating != null && (
                         <View style={styles.ratingBadge}>
                           <Ionicons name="star" size={9} color={T.star} />
-                          <Text style={styles.ratingBadgeText}>{movie.rating}</Text>
+                          <Text style={styles.ratingBadgeText}>
+                            {movie.rating}
+                          </Text>
                         </View>
                       )}
                     </View>
                     <Text style={styles.rankNumber}>{i + 1}</Text>
-                    <Text style={styles.rankTitle} numberOfLines={1}>{movie.title}</Text>
-                    <Text style={styles.rankGenre} numberOfLines={1}>{movie.genre}</Text>
+                    <Text style={styles.rankTitle} numberOfLines={1}>
+                      {movie.title}
+                    </Text>
+                    <Text style={styles.rankGenre} numberOfLines={1}>
+                      {movie.genre}
+                    </Text>
                   </Animated.View>
                 ))}
               </ScrollView>
@@ -202,14 +248,21 @@ export default function HomeScreen() {
 
           {/* Trending */}
           {trending.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(200).duration(500)} style={styles.section}>
+            <Animated.View
+              entering={FadeInDown.delay(200).duration(500)}
+              style={styles.section}
+            >
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Trending This Week</Text>
                 <TouchableOpacity>
                   <Text style={styles.seeAll}>See All</Text>
                 </TouchableOpacity>
               </View>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hScroll}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.hScroll}
+              >
                 {trending.map((movie, i) => (
                   <Animated.View
                     key={movie.id}
@@ -223,8 +276,12 @@ export default function HomeScreen() {
                         contentFit="cover"
                       />
                     </View>
-                    <Text style={styles.trendTitle} numberOfLines={1}>{movie.title}</Text>
-                    <Text style={styles.trendGenre} numberOfLines={1}>{movie.genre}</Text>
+                    <Text style={styles.trendTitle} numberOfLines={1}>
+                      {movie.title}
+                    </Text>
+                    <Text style={styles.trendGenre} numberOfLines={1}>
+                      {movie.genre}
+                    </Text>
                   </Animated.View>
                 ))}
               </ScrollView>
@@ -233,7 +290,10 @@ export default function HomeScreen() {
 
           {/* Popular this week */}
           {popular.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(300).duration(500)} style={styles.section}>
+            <Animated.View
+              entering={FadeInDown.delay(300).duration(500)}
+              style={styles.section}
+            >
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Popular This Week</Text>
               </View>
@@ -243,7 +303,10 @@ export default function HomeScreen() {
                     key={movie.id}
                     entering={FadeInDown.delay(320 + i * 80).duration(400)}
                   >
-                    <TouchableOpacity style={styles.popularCard} activeOpacity={0.8}>
+                    <TouchableOpacity
+                      style={styles.popularCard}
+                      activeOpacity={0.8}
+                    >
                       <View style={styles.popularPoster}>
                         <Image
                           source={posterUrl(movie.posterPath)}
@@ -255,22 +318,32 @@ export default function HomeScreen() {
                         <View style={styles.popularMeta}>
                           {movie.badge && (
                             <View style={styles.featuredBadge}>
-                              <Text style={styles.featuredBadgeText}>{movie.badge}</Text>
+                              <Text style={styles.featuredBadgeText}>
+                                {movie.badge}
+                              </Text>
                             </View>
                           )}
                           {movie.rating != null && (
                             <View style={styles.starRow}>
                               <Ionicons name="star" size={11} color={T.star} />
-                              <Text style={styles.starText}>{movie.rating}</Text>
+                              <Text style={styles.starText}>
+                                {movie.rating}
+                              </Text>
                             </View>
                           )}
                         </View>
                         <Text style={styles.popularTitle}>{movie.title}</Text>
                         {movie.overview && (
-                          <Text style={styles.popularDesc} numberOfLines={2}>{movie.overview}</Text>
+                          <Text style={styles.popularDesc} numberOfLines={2}>
+                            {movie.overview}
+                          </Text>
                         )}
                         <View style={styles.tagRow}>
-                          {movie.genre && <View style={styles.tag}><Text style={styles.tagText}>{movie.genre}</Text></View>}
+                          {movie.genre && (
+                            <View style={styles.tag}>
+                              <Text style={styles.tagText}>{movie.genre}</Text>
+                            </View>
+                          )}
                         </View>
                       </View>
                     </TouchableOpacity>
@@ -294,7 +367,12 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingBottom: 24 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  errorText: { color: T.error, fontSize: 14, textAlign: "center", paddingHorizontal: 24 },
+  errorText: {
+    color: T.error,
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: 24,
+  },
 
   // Header
   header: {
@@ -429,10 +507,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  featuredBadgeText: { fontSize: 10, fontWeight: "700", color: T.primary, textTransform: "uppercase" },
+  featuredBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: T.primary,
+    textTransform: "uppercase",
+  },
   starRow: { flexDirection: "row", alignItems: "center", gap: 3 },
   starText: { fontSize: 12, color: T.star, fontWeight: "600" },
-  popularTitle: { fontSize: 16, fontWeight: "700", color: T.text, lineHeight: 20 },
+  popularTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: T.text,
+    lineHeight: 20,
+  },
   popularDesc: { fontSize: 13, color: T.muted, lineHeight: 18 },
   tagRow: { flexDirection: "row", gap: 6, marginTop: 2 },
   tag: {
@@ -444,23 +532,51 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 11, color: T.muted },
 
   // FAB
-  fab: {
+  fabWrap: {
     position: "absolute",
     bottom: 28,
     alignSelf: "center",
-    borderRadius: 30,
-    backgroundColor: T.primary,
-    shadowColor: T.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 16,
-    elevation: 8,
   },
-  fabInner: {
+  // Halo views are absolutely inset to match the pill.
+  // Their solid backgroundColor is covered by the pill rendered on top,
+  // but their blurred shadow radiates outward as a glow ring.
+  glowHaloWide: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderRadius: 30,
+    backgroundColor: "#b820e0",
+    shadowColor: "#cc40ff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 28,
+    // shadowOpacity animated
+  },
+  glowHaloTight: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderRadius: 30,
+    backgroundColor: "#c030ee",
+    shadowColor: "#ee80ff",
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 14,
+    // shadowOpacity animated
+  },
+  fabTouchable: {
+    borderRadius: 30,
+    overflow: "hidden",
+    // Elevation on Android gives a colored-ish drop shadow
+    elevation: 16,
+  },
+  fabGradient: {
     flexDirection: "row",
     alignItems: "center",
-    // left padding makes room for bunny; right padding balances
     paddingLeft: BUNNY_W + 10,
-    paddingRight: 24,
+    paddingRight: 26,
     paddingVertical: 13,
     borderRadius: 30,
   },
@@ -472,8 +588,8 @@ const styles = StyleSheet.create({
   },
   fabBunny: {
     position: "absolute",
-    left: 6,
-    bottom: 0,
+    left: -4,
+    bottom: -8,
     width: BUNNY_W,
     height: BUNNY_H,
   },

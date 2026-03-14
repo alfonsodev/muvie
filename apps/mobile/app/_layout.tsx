@@ -4,7 +4,9 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
 import "react-native-reanimated";
-import { authClient } from "@/lib/auth-client";
+import { authClient, BEARER_KEY } from "@/lib/auth-client";
+import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,6 +17,15 @@ export const unstable_settings = {
 export default function RootLayout() {
   const { data: session, isPending } = authClient.useSession();
   const splashHidden = useRef(false);
+
+  // Persist the session token so manual fetch() calls can authenticate.
+  // Passkey sign-in sets this explicitly, but Google/magic-link flows don't —
+  // the expoClient plugin manages cookies instead. This syncs the two.
+  useEffect(() => {
+    if (session?.session?.token && Platform.OS !== "web") {
+      SecureStore.setItemAsync(BEARER_KEY, session.session.token);
+    }
+  }, [session?.session?.token]);
 
   useEffect(() => {
     if (!isPending && !splashHidden.current) {
@@ -42,12 +53,14 @@ export default function RootLayout() {
         <Stack.Screen
           name="chat"
           options={{
-            presentation: "formSheet",
+            presentation: Platform.OS === "ios" ? "formSheet" : "modal",
             headerShown: false,
-            sheetGrabberVisible: true,
-            sheetAllowedDetents: [1.0],
-            sheetCornerRadius: 20,
-            contentStyle: { backgroundColor: "transparent" },
+            ...(Platform.OS === "ios"
+              ? {
+                  sheetGrabberVisible: true,
+                  sheetCornerRadius: 20,
+                }
+              : null),
           }}
         />
       </Stack>

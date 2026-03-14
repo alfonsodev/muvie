@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "PORTLESS_APP_PORT=4823 portless dev.muvie next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

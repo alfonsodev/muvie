@@ -49,10 +49,17 @@ const SUGGESTIONS = [
 export default function ChatScreen() {
   const router = useRouter();
   const [bearerToken, setBearerToken] = React.useState<string | null>(null);
+  const [authReady, setAuthReady] = React.useState(Platform.OS === "web");
 
   useEffect(() => {
-    if (Platform.OS === "web") { setBearerToken(""); return; }
-    SecureStore.getItemAsync(BEARER_KEY).then((tk) => setBearerToken(tk ?? ""));
+    if (Platform.OS === "web") {
+      setBearerToken("");
+      setAuthReady(true);
+      return;
+    }
+    SecureStore.getItemAsync(BEARER_KEY)
+      .then((tk) => setBearerToken(tk ?? ""))
+      .finally(() => setAuthReady(true));
   }, []);
 
   const transport = useMemo(
@@ -81,12 +88,17 @@ export default function ChatScreen() {
 
   const handleSend = () => {
     const text = input.trim();
-    if (!text || isLoading) return;
+    if (!text || isLoading || !authReady) return;
     setInput("");
     sendMessage({ text });
   };
 
-  const canSend = input.trim().length > 0 && !isLoading;
+  const handleSuggestion = (text: string) => {
+    if (!authReady || isLoading) return;
+    sendMessage({ text });
+  };
+
+  const canSend = input.trim().length > 0 && !isLoading && authReady;
 
   return (
     <SafeAreaView style={styles.root} edges={["bottom"]}>
@@ -116,7 +128,7 @@ export default function ChatScreen() {
           keyboardDismissMode="interactive"
         >
           {messages.length === 0 ? (
-            <EmptyState onSuggestion={(text) => sendMessage({ text })} />
+            <EmptyState onSuggestion={handleSuggestion} />
           ) : (
             <>
               {messages.map((msg) => (
@@ -141,12 +153,13 @@ export default function ChatScreen() {
               style={styles.input}
               value={input}
               onChangeText={setInput}
-              placeholder="What do you want to watch?"
+              placeholder={authReady ? "What do you want to watch?" : "Loading session..."}
               placeholderTextColor={T.dim}
               multiline
               maxLength={4000}
               onSubmitEditing={handleSend}
               returnKeyType="send"
+              editable={authReady}
             />
             <Pressable
               style={[styles.sendBtn, canSend ? styles.sendBtnActive : styles.sendBtnInactive]}
@@ -169,8 +182,8 @@ function EmptyState({ onSuggestion }: { onSuggestion: (text: string) => void }) 
   useEffect(() => {
     pulse.value = withRepeat(
       withSequence(
-        withTiming(1.12, { duration: 1600, easing: Easing.inOut(Easing.sine) }),
-        withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.sine) })
+        withTiming(1.12, { duration: 1600, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 1600, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       false
@@ -208,6 +221,87 @@ function EmptyState({ onSuggestion }: { onSuggestion: (text: string) => void }) 
   );
 }
 
+const VISIBLE_TOOLS = new Set(["addToWatchlist", "removeFromWatchlist", "updateProfile"]);
+
+type ToolPart = {
+  type: string;
+  state?: string;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  errorText?: string;
+  toolInvocation?: {
+    toolName?: string;
+    state?: string;
+    args?: Record<string, unknown>;
+    result?: Record<string, unknown>;
+  };
+};
+
+function readToolPart(part: ToolPart) {
+  if (part.type === "tool-invocation") {
+    const inv = part.toolInvocation;
+    return inv
+      ? {
+          toolName: inv.toolName ?? "",
+          state: inv.state === "result" ? "output-available" : inv.state,
+          input: inv.args,
+          output: inv.result,
+          errorText: undefined,
+        }
+      : null;
+  }
+
+  return {
+    toolName: part.type.slice(5),
+    state: part.state,
+    input: part.input,
+    output: part.output,
+    errorText: part.errorText,
+  };
+}
+
+function isVisibleToolResult(part: unknown): part is ToolPart {
+  if (!part || typeof part !== "object" || !("type" in part)) return false;
+  const tool = readToolPart(part as ToolPart);
+  return !!tool && VISIBLE_TOOLS.has(tool.toolName) && (tool.state === "output-available" || tool.state === "output-error");
+}
+
+function ToolChip({ part }: { part: ToolPart }) {
+  const tool = readToolPart(part);
+  if (!tool || !VISIBLE_TOOLS.has(tool.toolName)) return null;
+
+  const ok = tool.state === "output-available" && tool.output?.success !== false;
+  let label = "";
+  let icon: keyof typeof Ionicons.glyphMap = "checkmark-circle-outline";
+
+  switch (tool.toolName) {
+    case "addToWatchlist": {
+      const list = tool.input?.status === "watched" ? "watched list" : "watchlist";
+      const title = String(tool.input?.title ?? "title");
+      label = ok ? `"${title}" added to your ${list}` : `Could not add "${title}"`;
+      icon = ok ? "bookmark-outline" : "alert-circle-outline";
+      break;
+    }
+    case "removeFromWatchlist": {
+      const title = String(tool.input?.title ?? "title");
+      label = ok ? `Removed "${title}"` : `Could not remove "${title}"`;
+      icon = ok ? "trash-outline" : "alert-circle-outline";
+      break;
+    }
+    case "updateProfile":
+      label = ok ? "Preferences saved" : "Could not save preferences";
+      icon = ok ? "person-circle-outline" : "alert-circle-outline";
+      break;
+  }
+
+  return (
+    <Animated.View entering={FadeIn.duration(250)} style={styles.toolChip}>
+      <Ionicons name={icon} size={14} color={ok ? T.primary : T.error} />
+      <Text style={[styles.toolChipText, !ok && { color: T.error }]}>{label}</Text>
+    </Animated.View>
+  );
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function MessageRow({ message }: { message: any }) {
   const isUser = message.role === "user";
@@ -217,6 +311,13 @@ function MessageRow({ message }: { message: any }) {
         .map((p: { type: string; text: string }) => p.text)
         .join("")
     : (message.content ?? "");
+
+  const toolParts: ToolPart[] = !isUser && message.parts
+    ? message.parts.filter(isVisibleToolResult)
+    : [];
+
+  // Hide assistant messages with no text and no visible tool results
+  if (!isUser && !text.trim() && toolParts.length === 0) return null;
 
   const entering = isUser
     ? FadeInRight.duration(280).springify().damping(18)
@@ -233,7 +334,12 @@ function MessageRow({ message }: { message: any }) {
         {isUser ? (
           <Text style={styles.bubbleText}>{text}</Text>
         ) : (
-          <Markdown style={markdownStyles}>{text}</Markdown>
+          <>
+            {text.trim() ? <Markdown style={markdownStyles}>{text}</Markdown> : null}
+            {toolParts.map((part, i: number) => (
+              <ToolChip key={i} part={part} />
+            ))}
+          </>
         )}
       </View>
     </Animated.View>
@@ -246,7 +352,7 @@ function TypingIndicator() {
   const dot3 = useSharedValue(0);
 
   useEffect(() => {
-    const cfg = { duration: 400, easing: Easing.inOut(Easing.sine) };
+    const cfg = { duration: 400, easing: Easing.inOut(Easing.sin) };
     dot1.value = withRepeat(withSequence(withTiming(-5, cfg), withTiming(0, cfg)), -1);
     setTimeout(() => {
       dot2.value = withRepeat(withSequence(withTiming(-5, cfg), withTiming(0, cfg)), -1);
@@ -416,6 +522,23 @@ const styles = StyleSheet.create({
     maxWidth: "90%",
   },
   bubbleText: { color: T.text, fontSize: 16, lineHeight: 24 },
+  toolChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.border,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 8,
+  },
+  toolChipText: {
+    color: T.muted,
+    fontSize: 13,
+    fontWeight: "500",
+  },
 
   // Typing indicator
   typingBubble: {

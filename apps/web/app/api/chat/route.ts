@@ -215,9 +215,14 @@ function createWatchlistTools(userId: string) {
     }),
     execute: async ({ tmdbId, mediaType, title, status }) => {
       console.log(`[tool:addToWatchlist] userId=${userId} tmdbId=${tmdbId} title="${title}" status=${status}`);
-      upsertWatchlistItem(userId, tmdbId, mediaType, title, status);
-      const label = status === "watched" ? "watched list" : "watchlist";
-      return { success: true, message: `"${title}" added to your ${label} ✓` };
+      try {
+        upsertWatchlistItem(userId, tmdbId, mediaType, title, status);
+        const label = status === "watched" ? "watched list" : "watchlist";
+        return { success: true, message: `"${title}" added to your ${label} ✓` };
+      } catch (err) {
+        console.error(`[tool:addToWatchlist] ERROR:`, err);
+        return { success: false, error: (err as Error).message };
+      }
     },
   });
 
@@ -231,10 +236,15 @@ function createWatchlistTools(userId: string) {
     }),
     execute: async ({ tmdbId, mediaType, title }) => {
       console.log(`[tool:removeFromWatchlist] userId=${userId} tmdbId=${tmdbId} title="${title}"`);
-      const removed = deleteWatchlistItem(userId, tmdbId, mediaType);
-      return removed
-        ? { success: true, message: `"${title}" removed from your list ✓` }
-        : { success: false, message: `"${title}" was not in your list` };
+      try {
+        const removed = deleteWatchlistItem(userId, tmdbId, mediaType);
+        return removed
+          ? { success: true, message: `"${title}" removed from your list ✓` }
+          : { success: false, message: `"${title}" was not in your list` };
+      } catch (err) {
+        console.error(`[tool:removeFromWatchlist] ERROR:`, err);
+        return { success: false, error: (err as Error).message };
+      }
     },
   });
 
@@ -248,20 +258,25 @@ function createWatchlistTools(userId: string) {
     }),
     execute: async ({ filter }) => {
       console.log(`[tool:getWatchlist] userId=${userId} filter=${filter}`);
-      const items = listWatchlist(userId, filter === "all" ? undefined : filter);
-      if (items.length === 0) {
-        const label =
-          filter === "watched" ? "watched list" : filter === "want_to_watch" ? "watchlist" : "list";
-        return { items: [], message: `Your ${label} is empty.` };
+      try {
+        const items = listWatchlist(userId, filter === "all" ? undefined : filter);
+        if (items.length === 0) {
+          const label =
+            filter === "watched" ? "watched list" : filter === "want_to_watch" ? "watchlist" : "list";
+          return { items: [], message: `Your ${label} is empty.` };
+        }
+        return {
+          items: items.map((item) => ({
+            tmdbId: item.tmdb_id,
+            mediaType: item.media_type,
+            title: item.title,
+            status: item.status,
+          })),
+        };
+      } catch (err) {
+        console.error(`[tool:getWatchlist] ERROR:`, err);
+        return { items: [], error: (err as Error).message };
       }
-      return {
-        items: items.map((item) => ({
-          tmdbId: item.tmdb_id,
-          mediaType: item.media_type,
-          title: item.title,
-          status: item.status,
-        })),
-      };
     },
   });
 
@@ -275,9 +290,14 @@ function createProfileTools(userId: string) {
     inputSchema: z.object({}),
     execute: async () => {
       console.log(`[tool:getProfile] userId=${userId}`);
-      const profile = getUserProfile(userId);
-      if (!profile) return { empty: true };
-      return { empty: false, ...profile };
+      try {
+        const profile = getUserProfile(userId);
+        if (!profile) return { empty: true };
+        return { empty: false, ...profile };
+      } catch (err) {
+        console.error(`[tool:getProfile] ERROR:`, err);
+        return { empty: true, error: (err as Error).message };
+      }
     },
   });
 
@@ -294,8 +314,13 @@ function createProfileTools(userId: string) {
     }),
     execute: async (fields) => {
       console.log(`[tool:updateProfile] userId=${userId}`, fields);
-      upsertUserProfile(userId, fields);
-      return { success: true };
+      try {
+        upsertUserProfile(userId, fields);
+        return { success: true };
+      } catch (err) {
+        console.error(`[tool:updateProfile] ERROR:`, err);
+        return { success: false, error: (err as Error).message };
+      }
     },
   });
 
@@ -309,45 +334,38 @@ Your personality:
 - Knowledgeable about movies and series across all genres, decades, and countries
 - Great at understanding mood, preferences, and group dynamics
 
-Your capabilities:
-- Recommend movies and TV series tailored to the user's mood, taste, and context
-- Help groups of friends decide what to watch together by finding common ground
-- Provide brief, engaging descriptions without spoilers
-- For general recommendations, use discoverByPlatform — results are already confirmed streamable in that country, **do NOT call getWatchProviders on them**
-- When the user mentions specific platforms (e.g. "on Netflix or Apple TV+"), pass them as the platforms array to discoverByPlatform
-- Use getTrending only when the user explicitly asks what's trending globally (no country filter — results may not be locally available)
-- Use searchContent to look up a specific title by name and get its TMDB ID
-- Only call getWatchProviders when the user explicitly asks "where can I watch [specific title]" — **never call it proactively, never call it when updating a profile, never call it at conversation start**
-- **Call getWatchProviders at most once per tmdbId per conversation — if the result already has cached=true, stop and use that data**
-- A movie is "available" even if it's only on rent/buy — flatrate (subscription) is not the only way to watch
-- Offer alternatives if something doesn't appeal
+Tools — when to use each:
+- discoverByPlatform: Find content on streaming platforms. Results are confirmed available — do NOT follow up with getWatchProviders on them.
+- searchContent: Look up a specific title to get its TMDB ID.
+- getTrending: Globally trending content. Only when user asks what's hot/trending.
+- getWatchProviders: Where to stream a specific title. ONLY when user explicitly asks "where can I watch X" — never proactively, never after discoverByPlatform.
+- addToWatchlist: Save a title. Call IMMEDIATELY when user confirms ("add it", "save it", "sí", "añádela") — do not call any other tool first. Use status='watched' if they say they've already seen it.
+- removeFromWatchlist: Remove a title from the user's list.
+- getWatchlist: Show the user's saved titles, grouped by status.
+- getProfile: Load user preferences. Call once on the FIRST user message of the conversation only — never on subsequent turns.
+- updateProfile: Save preferences. Call IMMEDIATELY when user shares profile info (name, age, country, platforms, favorite movie) — do not call any other tool first.
 
-User profile:
-- Call getProfile **only on the very first user message of the conversation** (i.e., when there are no previous assistant messages). Do NOT call it on subsequent turns — you already have the profile from the first call.
-- If the profile is empty, ask conversationally for: their name, country, streaming platforms they subscribe to, and favorite movie (age and language are optional). Ask in a friendly, natural way — not like a form. Collect answers and call updateProfile to save them.
-- If the profile is partial, use what you have and fill in gaps over time
-- Once you have the profile, use it automatically: use profile.country as the country code (overrides the default), use profile.platforms as the default filter for discoverByPlatform, use profile.favorite_movie to understand their taste when making recommendations
-- When the user provides profile info (name, age, country, platforms, favorite movie) — even as part of a normal conversation — **immediately call updateProfile as the very next tool call**. Do NOT call getWatchProviders or any other tool before saving the profile data.
-
-Personal watchlist:
-- When the user confirms they want to add a title (e.g. "sí", "añádela", "add it", "save it", "apúntala"): **immediately call addToWatchlist — this must be the very next tool call, before anything else**. Use the tmdbId you already have from earlier in the conversation; only call searchContent first if you truly don't have it yet. Do NOT call getWatchProviders before addToWatchlist.
-- After adding, confirm it was saved and mention where to watch it if you know
-- If the user says "I've already seen it" / "ya la vi", call addToWatchlist with status='watched'
-- When the user asks to see their list, call getWatchlist and present it grouped by status
+Key rules:
+- Use profile.country as the default country code for all lookups.
+- Use profile.platforms as the default filter for discoverByPlatform.
+- If the profile is empty, ask conversationally for name, country, streaming platforms, and favorite movie — not like a form.
+- A title is "available" even on rent/buy — subscription isn't the only way.
+- Offer alternatives if something doesn't appeal.
 
 Response style:
-- **Always lead with a bold recommendation — never open with filtering questions.** Make your best guess based on whatever context you have and commit to it.
-- End every recommendation with a light, natural opening for the user to refine — e.g. "let me know if you're in the mood for something different" or "want something lighter / more action-packed?"
-- Keep responses concise and conversational, like a friend who really knows movies
-- Include one sentence on why you're recommending it (mood match, similar to X, great for groups, etc.)
-- Always mention streaming availability when relevant — use the getWatchProviders tool for accurate info
-- Use emojis sparingly to add personality (e.g. 🎬 🍿 ⭐)
+- Always lead with a bold recommendation — never open with filtering questions.
+- Keep it concise and conversational, like a friend who knows movies.
+- Include one sentence on why you're recommending it.
+- End with a light opening for refinement ("want something different?").
+- Use emojis sparingly (🎬 🍿 ⭐).
+- Never spoil plots.`;
 
-Always be helpful, never spoil plots, and make the experience of choosing what to watch fun.`;
-
-function buildSystemPrompt(locale: string, country: string): string {
+function buildSystemPrompt(locale: string, country: string, userId: string | null): string {
   const language = locale === "en" ? "English" : "Spanish";
-  return `${BASE_PROMPT}\n\nLanguage: Always respond in ${language}.\nUser's country: ${country} — use this code when calling getWatchProviders. If the user hasn't specified their country, assume Spain (ES).`;
+  const authNote = userId
+    ? "The user is signed in, so personal tools are available."
+    : "The user is not signed in, so personal tools are unavailable. If they ask to save preferences or manage a watchlist, explain briefly that they need to sign in first.";
+  return `${BASE_PROMPT}\n\nLanguage: Always respond in ${language}.\nUser's country: ${country} — use this code when calling getWatchProviders. If the user hasn't specified their country, assume Spain (ES).\nAuth: ${authNote}`;
 }
 
 export async function POST(req: Request) {
@@ -376,22 +394,15 @@ export async function POST(req: Request) {
   const profileTools = userId ? createProfileTools(userId) : {};
   const getWatchProviders = createGetWatchProviders();
 
-  // Only expose getWatchProviders when the user is explicitly asking where to watch a specific title.
-  // This prevents the model from calling it during unrelated tasks (profile updates, recommendations, etc.)
-  const lastText = (lastUserMsg?.parts ?? [])
-    .filter((p: { type: string }) => p.type === "text")
-    .map((p: { type: string; text?: string }) => p.text ?? "")
-    .join("")
-    .toLowerCase();
-  const wantsProviders = /where.*watch|d[oó]nde.*ver|on what.*platform|en qu[eé].*plataforma|where can i|d[oó]nde puedo/i.test(lastText);
-  const tools = { discoverByPlatform, searchContent, getTrending, ...watchlistTools, ...profileTools, ...(wantsProviders ? { getWatchProviders } : {}) };
+  console.log(`[chat] userId=${userId ?? "anonymous"} authTools=[${Object.keys({ ...watchlistTools, ...profileTools }).join(", ") || "none"}]`);
+  const tools = { discoverByPlatform, searchContent, getTrending, getWatchProviders, ...watchlistTools, ...profileTools };
 
   const result = streamText({
     model: openai("gpt-4.1"),
-    system: buildSystemPrompt(locale ?? "es", country ?? "US"),
+    system: buildSystemPrompt(locale ?? "es", country ?? "US", userId),
     messages: await convertToModelMessages(messages),
     tools,
-    stopWhen: stepCountIs(5),
+    stopWhen: stepCountIs(10),
     onStepFinish: ({ text, toolCalls, toolResults }) => {
       if (text?.trim()) {
         console.log(`[assistant] ${text.trim().slice(0, 300)}`);
@@ -408,6 +419,7 @@ export async function POST(req: Request) {
   });
 
   return result.toUIMessageStreamResponse({
+    originalMessages: messages,
     headers: {
       "Content-Type": "application/octet-stream",
       "Content-Encoding": "none",
