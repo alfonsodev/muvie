@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
 
     const popularList = (popular.results as unknown[])
       .slice(0, 6)
-      .map((item, i) => mapMovie(item, i === 0 ? "Featured" : i < 3 ? "Trending" : null));
+      .map((item, i) => mapMovie(item, i === 0 ? "Featured" : i < 3 ? "Trending" : undefined));
 
     return NextResponse.json({ top10, trending, popular: popularList });
   } catch (err) {
