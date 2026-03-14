@@ -1,13 +1,14 @@
-import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
+import { authClient, BEARER_KEY } from "@/lib/auth-client";
+import { AppConfig } from "@/lib/config";
 import { T } from "@/lib/theme";
 import { avatarColorFromSeed } from "@/lib/username";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -29,7 +30,7 @@ type UserProfile = {
 async function fetchUserProfile(token: string): Promise<UserProfile | null> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  const res = await fetch(`${BASE_URL}/api/user-profile`, {
+  const res = await fetch(`${AppConfig.apiBaseUrl}/api/user-profile`, {
     credentials: "include",
     headers,
   });

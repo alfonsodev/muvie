@@ -89,12 +89,11 @@ export default function ChatScreen() {
   const canSend = input.trim().length > 0 && !isLoading;
 
   return (
-    <SafeAreaView style={styles.root} edges={["top", "bottom"]}>
+    <SafeAreaView style={styles.root} edges={["bottom"]}>
       {/* Header */}
       <Animated.View entering={FadeInDown.duration(300)} style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={22} color={T.text} />
-          <Text style={styles.backText}>Back</Text>
+          <Ionicons name="chevron-down" size={24} color={T.text} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Ionicons name="sparkles" size={16} color={T.primary} />
@@ -290,17 +289,11 @@ const styles = StyleSheet.create({
     borderBottomColor: T.border,
   },
   backBtn: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    justifyContent: "center",
     paddingHorizontal: 4,
     paddingVertical: 4,
     minWidth: 70,
-  },
-  backText: {
-    fontSize: 16,
-    color: T.text,
-    fontWeight: "500",
   },
   headerCenter: {
     flexDirection: "row",

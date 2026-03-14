@@ -1,4 +1,5 @@
-import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
+import { authClient, BEARER_KEY } from "@/lib/auth-client";
+import { AppConfig } from "@/lib/config";
 import { isPasskeySupported, isUserCancelledError, signInWithPasskey } from "@/lib/passkey";
 import { T } from "@/lib/theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -50,14 +51,19 @@ function DebugModal({ visible, onClose }: { visible: boolean; onClose: () => voi
 
   const rows: DebugRow[] = [
     {
-      label: "BASE_URL",
-      value: BASE_URL,
-      desc: "Computed API base. Points to localhost in dev, muvie.org in prod, or EXPO_PUBLIC_API_URL if set.",
+      label: "apiBaseUrl",
+      value: AppConfig.apiBaseUrl,
+      desc: "Typed runtime config for API requests.",
     },
     {
-      label: "EXPO_PUBLIC_API_URL",
-      value: process.env.EXPO_PUBLIC_API_URL ?? "(not set)",
-      desc: "Manually override the API URL — useful for staging. Overrides the auto-detected dev IP.",
+      label: "authBaseUrl",
+      value: AppConfig.authBaseUrl,
+      desc: "Typed runtime config for Better Auth endpoints and callback URLs.",
+    },
+    {
+      label: "appEnv",
+      value: AppConfig.appEnv,
+      desc: "Typed runtime environment (development, staging, production).",
     },
     {
       label: "__DEV__",
@@ -86,8 +92,8 @@ function DebugModal({ visible, onClose }: { visible: boolean; onClose: () => voi
     },
     {
       label: "scheme",
-      value: (Constants.expoConfig?.scheme as string | undefined) ?? "(not set)",
-      desc: "Deep-link URL scheme (muvie://). Must match the scheme registered for OAuth and magic-link callbacks.",
+      value: AppConfig.deepLinkScheme,
+      desc: "Deep-link URL scheme used by expo client plugin callbacks.",
     },
     {
       label: "Bearer token",
@@ -175,7 +181,7 @@ export default function SignInScreen() {
     try {
       const result = await authClient.signIn.magicLink({
         email: trimmed,
-        callbackURL: `${BASE_URL}/auth/app-callback`,
+        callbackURL: `${AppConfig.authBaseUrl}/auth/app-callback`,
       });
       err = result.error;
     } catch (e) {
@@ -184,7 +190,7 @@ export default function SignInScreen() {
 
     if (err) {
       const message = (err.message ?? "").toLowerCase().includes("fetch")
-        ? `Could not reach ${BASE_URL}. Start the API server or set EXPO_PUBLIC_API_URL.`
+        ? `Could not reach ${AppConfig.apiBaseUrl}. Start the API server or set EXPO_PUBLIC_API_URL.`
         : (err.message ?? "Failed to send link");
       setError(message);
       setStage("input");
@@ -199,7 +205,7 @@ export default function SignInScreen() {
     try {
       await authClient.signIn.social({
         provider: "google",
-        callbackURL: `${BASE_URL}/auth/app-callback`,
+        callbackURL: `${AppConfig.authBaseUrl}/auth/app-callback`,
       });
     } catch (err) {
       setError((err as { message?: string })?.message ?? "Google sign-in failed");

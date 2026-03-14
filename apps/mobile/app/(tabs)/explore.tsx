@@ -1,4 +1,4 @@
-import { BASE_URL } from "@/lib/auth-client";
+import { AppConfig } from "@/lib/config";
 import { T } from "@/lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -50,7 +50,7 @@ export default function ExploreScreen() {
     const country = locale?.regionCode ?? "US";
     const language = `${locale?.languageCode ?? "en"}-${locale?.regionCode ?? "US"}`;
 
-    fetch(`${BASE_URL}/api/explore?country=${country}&language=${language}`)
+    fetch(`${AppConfig.apiBaseUrl}/api/explore?country=${country}&language=${language}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.error) throw new Error(json.error);

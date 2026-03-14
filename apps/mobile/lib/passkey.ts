@@ -1,13 +1,14 @@
 import type { PasskeyError } from "react-native-passkey";
 import { Platform } from "react-native";
-import { BASE_URL } from "@/lib/auth-client";
+import { AppConfig } from "@/lib/config";
 
 // react-native-passkey is iOS-only — never import it on web
 const Passkey: typeof import("react-native-passkey").Passkey | null =
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   Platform.OS === "ios" ? require("react-native-passkey").Passkey : null;
 
 async function apiFetch(path: string, body: object, headers?: HeadersInit) {
-  const res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${AppConfig.apiBaseUrl}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),

@@ -1,4 +1,4 @@
-import { BASE_URL } from "@/lib/auth-client";
+import { AppConfig } from "@/lib/config";
 import { T } from "@/lib/theme";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -49,32 +49,49 @@ function posterUrl(path: string | null): string | null {
   return path ? `${TMDB_IMG}${path}` : null;
 }
 
+const BUNNY_W = 60;
+const BUNNY_H = 72;
+
 function AskMuvieFab({ onPress }: { onPress: () => void }) {
   const scale = useSharedValue(1);
   const glow = useSharedValue(0.5);
+  const bunnyBob = useSharedValue(0);
 
   useEffect(() => {
     scale.value = withRepeat(
       withSequence(
-        withTiming(1.04, { duration: 1200, easing: Easing.inOut(Easing.sine) }),
-        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sine) })
+        withTiming(1.04, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
+        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       false
     );
     glow.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sine) }),
-        withTiming(0.5, { duration: 1200, easing: Easing.inOut(Easing.sine) })
+        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0.5, { duration: 1200, easing: Easing.inOut(Easing.sin) })
       ),
       -1,
       false
     );
-  }, []);
+    // bunny bobs slightly, offset from the pill pulse for a lively feel
+    bunnyBob.value = withRepeat(
+      withSequence(
+        withTiming(-3, { duration: 900, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0, { duration: 900, easing: Easing.inOut(Easing.sin) })
+      ),
+      -1,
+      false
+    );
+  }, [glow, scale, bunnyBob]);
 
   const fabStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     shadowOpacity: glow.value * 0.6,
+  }));
+
+  const bunnyStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: bunnyBob.value }],
   }));
 
   return (
@@ -82,14 +99,15 @@ function AskMuvieFab({ onPress }: { onPress: () => void }) {
       entering={FadeInDown.delay(400).springify().damping(14)}
       style={[styles.fab, fabStyle]}
     >
-      <TouchableOpacity
-        style={styles.fabInner}
-        activeOpacity={0.85}
-        onPress={onPress}
-      >
-        <Ionicons name="sparkles" size={18} color="#fff" />
+      <TouchableOpacity style={styles.fabInner} activeOpacity={0.85} onPress={onPress}>
         <Text style={styles.fabText}>Ask Muvie</Text>
       </TouchableOpacity>
+
+      {/* Bunny overlaid — bottom-anchored so ears overflow above the pill */}
+      <Animated.Image
+        source={require("@/assets/images/muvie_head.png")}
+        style={[styles.fabBunny, bunnyStyle]}
+      />
     </Animated.View>
   );
 }
@@ -105,7 +123,7 @@ export default function HomeScreen() {
     const country = locale?.regionCode ?? "US";
     const language = `${locale?.languageCode ?? "en"}-${locale?.regionCode ?? "US"}`;
 
-    fetch(`${BASE_URL}/api/explore?country=${country}&language=${language}`)
+    fetch(`${AppConfig.apiBaseUrl}/api/explore?country=${country}&language=${language}`)
       .then((r) => r.json())
       .then((json) => {
         if (json.error) throw new Error(json.error);
@@ -440,9 +458,10 @@ const styles = StyleSheet.create({
   fabInner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
+    // left padding makes room for bunny; right padding balances
+    paddingLeft: BUNNY_W + 10,
+    paddingRight: 24,
+    paddingVertical: 13,
     borderRadius: 30,
   },
   fabText: {
@@ -450,5 +469,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fff",
     letterSpacing: 0.2,
+  },
+  fabBunny: {
+    position: "absolute",
+    left: 6,
+    bottom: 0,
+    width: BUNNY_W,
+    height: BUNNY_H,
   },
 });

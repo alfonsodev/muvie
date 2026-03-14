@@ -1,7 +1,6 @@
-import { BASE_URL } from '@/lib/auth-client';
+import { AppConfig } from "@/lib/config";
 
 export const generateAPIUrl = (relativePath: string) => {
   const path = relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
-  return `${BASE_URL}${path}`;
+  return `${AppConfig.apiBaseUrl}${path}`;
 };
-

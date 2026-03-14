@@ -1,4 +1,5 @@
-import { BEARER_KEY, BASE_URL } from "@/lib/auth-client";
+import { BEARER_KEY } from "@/lib/auth-client";
+import { AppConfig } from "@/lib/config";
 import { T } from "@/lib/theme";
 import { Image } from "expo-image";
 import { getLocales } from "expo-localization";
@@ -48,7 +49,7 @@ type Filter = "all" | "want_to_watch" | "watched";
 
 async function fetchWatchlist(token: string): Promise<WatchlistEntry[]> {
   const res = await fetch(
-    `${BASE_URL}/api/watchlist?country=${country}`,
+    `${AppConfig.apiBaseUrl}/api/watchlist?country=${country}`,
     {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     }
@@ -62,7 +63,7 @@ async function removeFromWatchlist(
   tmdbId: number,
   mediaType: string
 ): Promise<void> {
-  await fetch(`${BASE_URL}/api/watchlist`, {
+  await fetch(`${AppConfig.apiBaseUrl}/api/watchlist`, {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",

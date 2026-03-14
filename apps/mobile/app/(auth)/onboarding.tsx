@@ -13,7 +13,8 @@ import {
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import { generateUsername, generateAvatarSeed, avatarColorFromSeed } from "@/lib/username";
-import { authClient, BASE_URL, BEARER_KEY } from "@/lib/auth-client";
+import { authClient, BEARER_KEY } from "@/lib/auth-client";
+import { AppConfig } from "@/lib/config";
 import { registerPasskey, isPasskeySupported } from "@/lib/passkey";
 import { T } from "@/lib/theme";
 import { Ionicons } from "@expo/vector-icons";
@@ -67,7 +68,7 @@ export default function OnboardingScreen() {
         const token = await SecureStore.getItemAsync(BEARER_KEY);
         if (token) authHeaders["Authorization"] = `Bearer ${token}`;
       }
-      const res = await fetch(`${BASE_URL}/api/profile`, {
+      const res = await fetch(`${AppConfig.apiBaseUrl}/api/profile`, {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json", ...authHeaders },
@@ -211,7 +212,7 @@ export default function OnboardingScreen() {
             {saving ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.saveBtnLabel}>Let's go</Text>
+              <Text style={styles.saveBtnLabel}>Let us go</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity

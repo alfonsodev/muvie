@@ -39,7 +39,17 @@ export default function RootLayout() {
         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="callback" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
-        <Stack.Screen name="chat" options={{ presentation: "modal", headerShown: false }} />
+        <Stack.Screen
+          name="chat"
+          options={{
+            presentation: "formSheet",
+            headerShown: false,
+            sheetGrabberVisible: true,
+            sheetAllowedDetents: [1.0],
+            sheetCornerRadius: 20,
+            contentStyle: { backgroundColor: "transparent" },
+          }}
+        />
       </Stack>
       {!isAuthenticated && <Redirect href="/(auth)/sign-in" />}
       {needsOnboarding && <Redirect href="/(auth)/onboarding" />}
